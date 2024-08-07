@@ -2,68 +2,26 @@
 	<head>
 		<style>
 			body {
-				background-color: #000;
+				background-color: #222;
+			}
+			canvas {
+				background-color: #333;
+			}
+			textarea {
+				width: 800px;
+				background-color: #111;
+				color: #ccc;
+				border: none;
+				resize: none;
+				height: 100px;
 			}
 		</style>
 	</head>
 	<body>
-		<canvas></canvas>
+		<canvas width="800" height="600"></canvas>
+		<div>
+			<textarea></textarea>
+		</div>
 	</body>
 </html>
-<script>
-	const canvas = document.querySelector('canvas');
-	const img = document.createElement('img');
-	const ctx = canvas.getContext('2d');
-
-	const latTop    = -25.488575;
-	const latBottom = -25.493922;
-	const lonLeft   = -54.567723;
-	const lonRight  = -54.560778;
-
-	let imgLoaded = false;
-	let coord = null;
-	const pxToM = 712.55/986;
-	const mToPx = 986/712.55;
-
-	const drawCoord = (lat, lon, rad) => {
-		const x = (lon - lonLeft) / (lonRight - lonLeft) * canvas.width;
-		const y = (lat - latTop) / (latBottom - latTop) * canvas.height;
-
-		ctx.fillStyle = 'rgba(0, 127, 255, 0.5)';
-		ctx.strokeStyle = '#07f';
-		ctx.beginPath();
-		ctx.arc(x, y, rad*mToPx, 0, Math.PI*2);
-		ctx.fill();
-		ctx.stroke();
-
-		ctx.fillStyle = '#07f';
-		ctx.strokeStyle = '#fff';
-		ctx.beginPath();
-		ctx.arc(x, y, 5, 0, Math.PI*2);
-		ctx.fill();
-		ctx.stroke();
-	};
-
-	const render = () => {
-		if (imgLoaded) {
-			ctx.drawImage(img, 0, 0);
-		}
-		if (coord) {
-			drawCoord(coord.latitude, coord.longitude, coord.accuracy);
-		}
-	};
-
-	navigator.geolocation.watchPosition((pos) => {
-		coord = pos.coords;
-		render();
-	}, _ => {}, { enableHighAccuracy: true });
-
-	img.onload = () => {
-		imgLoaded = true;
-		canvas.width = img.width;
-		canvas.height = img.height;
-		render();
-	};
-	img.src = './mapa.png';
-
-</script>
+<script src="script.js"></script>
