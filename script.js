@@ -13,17 +13,22 @@ const coordDist = (a, b) => {
 };
 
 const mapRange = [
-	[ -25.49391047187408, -54.567702589940495 ],
-	[ -25.48863155864345, -54.560803195955586 ],
+	[ -25.49659, -54.55207 ],
+	[ -25.49093, -54.54451 ],
 ];
 
 const diagonalMeters = coordDist(...mapRange);
 const diagonalPixels = Math.sqrt(canvas.width**2 + canvas.height**2);
 const meterPixelRatio = diagonalMeters / diagonalPixels;
 
-let coord = null;
+let coord  = null;
 let radius = null;
-let img = null;
+let images = {
+	satellite: null,
+	blackMap:  null,
+	whiteMap:  null,
+};
+let mode = 0;
 
 const loadImage = (src) => {
 	const img = document.createElement('img');
@@ -61,9 +66,26 @@ const drawLocation = () => {
 	ctx.stroke();
 };
 
+const clearCanvas = () => {
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+};
+
+const drawSatellite = () => {
+	ctx.drawImage(images.satellite, 0, 0);
+};
+
+const overlayMap = () => {
+	ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+	ctx.fillRect(0, 0, images.satellite.width, images.satellite.height);
+	ctx.drawImage(images.whiteMap, 0, 0);
+};
+
 const render = () => {
-	ctx.drawImage(img, 0, 0);	
+	clearCanvas();
+	drawSatellite();
+	overlayMap();
 	if (coord) {
+		console.log(coord);
 		drawLocation();
 	}
 };
@@ -93,13 +115,16 @@ const handleErr = (err) => {
 };
 
 const main = async () => {
-	img = await loadImage('./mapa.png');
-	canvas.width = img.width;
-	canvas.height = img.height;
+	images.satellite = await loadImage('./satellite.png');
+	images.whiteMap  = await loadImage('./white-map.png');
+	canvas.width  = images.satellite.width;
+	canvas.height = images.satellite.height;
 	render();
-	navigator.geolocation.watchPosition(handlePos, handleErr);
+	const options = { enableHighAccuracy: true };
+	navigator.geolocation.watchPosition(handlePos, handleErr, options);
 };
 
+showLog();
 main().catch(err => {
 	log('error:', err.message);
 	showLog();
