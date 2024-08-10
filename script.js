@@ -55,8 +55,8 @@ const coordToXY = ([ lat, lon ]) => {
 	const [ maxLat, maxLon ] = maxCoord;
 	const nx = (lon - minLon) / (maxLon - minLon);
 	const ny = (lat - minLat) / (maxLat - minLat);
-	const x = canvas.width/2  + (nx - 0.5)*imgWidth;
-	const y = canvas.height/2 - (ny - 0.5)*imgHeight;
+	const x = canvas.width/2  + (nx - 0.5)*imgWidth*zoom  + dx;
+	const y = canvas.height/2 - (ny - 0.5)*imgHeight*zoom + dy;
 	return [ x, y ];
 };
 
@@ -66,14 +66,14 @@ const drawLocation = () => {
 	ctx.strokeStyle = '#07f';
 	ctx.fillStyle = 'rgba(0, 127, 255, 0.2)';
 	ctx.beginPath();
-	ctx.arc(x, y, radius/meterPixelRatio, 0, Math.PI*2);
+	ctx.arc(x, y, radius/meterPixelRatio*zoom, 0, Math.PI*2);
 	ctx.fill();
 	ctx.stroke();
 
 	ctx.strokeStyle = '#fff';
 	ctx.fillStyle = '#07f';
 	ctx.beginPath();
-	ctx.arc(x, y, 5, 0, Math.PI*2);
+	ctx.arc(x, y, 5*zoom, 0, Math.PI*2);
 	ctx.fill();
 	ctx.stroke();
 };
@@ -85,7 +85,7 @@ const clearCanvas = () => {
 const drawImage = (img) => {
 	const [ left, bottom ] = coordToXY(mapRange[0]);
 	const [ right, top ] = coordToXY(mapRange[1]);
-	ctx.drawImage(img, left, top);
+	ctx.drawImage(img, left, top, right - left, bottom - top);
 };
 
 const drawSatellite = () => {
@@ -153,6 +153,16 @@ const main = async () => {
 };
 
 window.addEventListener('resize', resizeCanvas);
+
+document.querySelector('#zoom_in').addEventListener('click', () => {
+	zoom *= 1.25;
+	render();
+});
+
+document.querySelector('#zoom_out').addEventListener('click', () => {
+	zoom /= 1.25;
+	render();
+});
 
 main().catch(err => {
 	log('error:', err.message);
