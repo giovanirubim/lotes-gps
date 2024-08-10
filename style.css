@@ -1,0 +1,21 @@
+body {
+	background-color: #222;
+	margin: 0px;
+	overflow: hidden;
+}
+canvas {
+	background-color: #333;
+}
+textarea {
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	opacity: 0.75;
+	padding: 10px;
+	background-color: #111;
+	color: #ccc;
+	border: none;
+	resize: none;
+	height: 100px;
+}

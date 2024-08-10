@@ -12,6 +12,10 @@ const coordDist = (a, b) => {
 	);
 };
 
+const averageCoords = ([ aLat, aLon ], [ bLat, bLon ]) => {
+	return [ (aLat + bLat)/2, (aLon + bLon)/2 ];
+};
+
 const mapRange = [
 	[ -25.49659, -54.55207 ],
 	[ -25.49093, -54.54451 ],
@@ -28,7 +32,13 @@ let images = {
 	blackMap:  null,
 	whiteMap:  null,
 };
+let imgWidth = null;
+let imgHeight = null;
+
 let mode = 0;
+let zoom = 1;
+let dx = 0;
+let dy = 0;
 
 const loadImage = (src) => {
 	const img = document.createElement('img');
@@ -43,8 +53,10 @@ const coordToXY = ([ lat, lon ]) => {
 	const [ minCoord, maxCoord ] = mapRange;
 	const [ minLat, minLon ] = minCoord;
 	const [ maxLat, maxLon ] = maxCoord;
-	const x = (lon - minLon) / (maxLon - minLon) * canvas.width;
-	const y = (lat - maxLat) / (minLat - maxLat) * canvas.height;
+	const nx = (lon - minLon) / (maxLon - minLon);
+	const ny = (lat - minLat) / (maxLat - minLat);
+	const x = canvas.width/2  + (nx - 0.5)*imgWidth;
+	const y = canvas.height/2 - (ny - 0.5)*imgHeight;
 	return [ x, y ];
 };
 
@@ -70,14 +82,22 @@ const clearCanvas = () => {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 };
 
+const drawImage = (img) => {
+	const [ left, bottom ] = coordToXY(mapRange[0]);
+	const [ right, top ] = coordToXY(mapRange[1]);
+	ctx.drawImage(img, left, top);
+};
+
 const drawSatellite = () => {
-	ctx.drawImage(images.satellite, 0, 0);
+	drawImage(images.satellite);
 };
 
 const overlayMap = () => {
 	ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-	ctx.fillRect(0, 0, images.satellite.width, images.satellite.height);
-	ctx.drawImage(images.whiteMap, 0, 0);
+	const [ left, bottom ] = coordToXY(mapRange[0]);
+	const [ right, top ] = coordToXY(mapRange[1]);
+	ctx.fillRect(left, top, right - left, bottom - top);
+	drawImage(images.whiteMap);
 };
 
 const render = () => {
@@ -91,7 +111,7 @@ const render = () => {
 };
 
 const log = (...args) => {
-	textarea.value = args.join(' ') + '\n';
+	textarea.value += args.join(' ') + '\n';
 };
 
 const handlePos = (pos) => {
@@ -114,17 +134,26 @@ const handleErr = (err) => {
 	showLog();
 };
 
-const main = async () => {
-	images.satellite = await loadImage('./satellite.png');
-	images.whiteMap  = await loadImage('./white-map.png');
-	canvas.width  = images.satellite.width;
-	canvas.height = images.satellite.height;
+const resizeCanvas = () => {
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
 	render();
-	const options = { enableHighAccuracy: true };
-	navigator.geolocation.watchPosition(handlePos, handleErr, options);
 };
 
-showLog();
+const main = async () => {
+	showLog();
+	images.satellite = await loadImage('./satellite.png');
+	images.whiteMap  = await loadImage('./white-map.png');
+	const { width, height } = images.satellite;
+	imgWidth = canvas.width  = width;
+	imgHeight = canvas.height = height;
+	const options = { enableHighAccuracy: true };
+	navigator.geolocation.watchPosition(handlePos, handleErr, options);
+	resizeCanvas();
+};
+
+window.addEventListener('resize', resizeCanvas);
+
 main().catch(err => {
 	log('error:', err.message);
 	showLog();
