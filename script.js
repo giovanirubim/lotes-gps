@@ -105,13 +105,13 @@ const render = () => {
 	drawSatellite();
 	overlayMap();
 	if (coord) {
-		console.log(coord);
 		drawLocation();
 	}
 };
 
 const log = (...args) => {
 	textarea.value += args.join(' ') + '\n';
+	textarea.scrollTop = textarea.scrollHeight;
 };
 
 const handlePos = (pos) => {
