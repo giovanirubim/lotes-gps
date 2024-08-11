@@ -40,3 +40,6 @@ div.buttons button img {
 div.buttons button:not(button:nth-child(1)) {
 	margin-left: 10px;
 }
+div.buttons button.disabled {
+	filter: saturate(0) brightness(0.5) opacity(0.75);
+}

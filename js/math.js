@@ -145,3 +145,26 @@ export const copyRotation = (a, b, res = []) => {
 
 	return res;
 };
+
+export const calcAngle = (adj, opp) => {
+	return Math.acos(adj/Math.sqrt(adj**2 + opp**2))*Math.sign(opp);
+};
+
+export const rotationTransform = (angle, res = []) => {
+	const s = Math.sin(angle);
+	const c = Math.cos(angle);
+
+	res[0] = c;
+	res[1] = s;
+	res[2] = - s;
+	res[3] = c;
+	res[4] = 0;
+	res[5] = 0;
+
+	return res;
+};
+
+export const rotateTransform = (t, angle, res = []) => {
+	rotationTransform(angle, aux)
+	return combineTransforms(t, aux, res);
+};

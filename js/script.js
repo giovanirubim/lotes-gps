@@ -1,9 +1,11 @@
+import { animate, smooth } from './animate.js';
 import './math.js';
 import * as M from './math.js';
 
 const canvas = document.querySelector('canvas');
 const textarea = document.querySelector('textarea');
 const ctx = canvas.getContext('2d');
+const compassImg = document.querySelector('#compass img');
 
 let satelliteImg;
 let whiteMap;
@@ -34,6 +36,29 @@ const overlayMap = () => {
 	drawImage(whiteMap);
 };
 
+const calcAzm = () => {
+	const [ ix, iy ] = transform;
+	return M.calcAngle(ix, iy);
+};
+
+const restoreNorth = () => {
+	const m = [ ...transform ];
+	const azm = calcAzm();
+	const rot = M.clearTransform();
+	const cx = canvas.width  * 0.5;
+	const cy = canvas.height * 0.5;
+	animate(t => {
+		M.rotationTransform(-smooth(t)*azm, rot);
+		M.combineTransformsAt(m, rot, [ cx, cy ], transform);
+		render();
+	}, 500);
+};
+
+const updateCompass = () => {
+	const azm = calcAzm();
+	compassImg.setAttribute('style', `transform:rotate(${azm}rad)`);
+};
+
 const loadImage = (src) => {
 	const img = document.createElement('img');
 	return new Promise((done, fail) => {
@@ -55,6 +80,7 @@ const render = () => {
 	}
 	drawImage(satelliteImg);
 	overlayMap();
+	updateCompass();
 };
 
 const log = (...args) => {
@@ -208,3 +234,4 @@ canvas.addEventListener('touchend', () => {
 		handleTouchEnd();
 	}
 });
+compassImg.parentElement.addEventListener('click', restoreNorth);
