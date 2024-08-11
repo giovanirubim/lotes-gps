@@ -116,10 +116,32 @@ export const normalize = (v, res = []) => {
 	return divVec(v, vecLen(v), res);
 };
 
+export const dotProd = ([ ax, ay ], [ bx, by ]) => {
+	return ax*bx + ay*by;
+};
+
 export const combineTransformsAt = (a, b, origin, res = []) => {
 	const [ x, y ] = origin;
 	translateTransform(a, [ -x, -y ], res);
 	combineTransforms(res, b, res);
 	translateTransform(res, origin, res);
+	return res;
+};
+
+export const copyRotation = (a, b, res = []) => {
+	const [ ax, ay ] = normalize(a);
+	const [ bx, by ] = normalize(b);
+
+	const cos = ax*bx + ay*by;
+	const sinMag = Math.sqrt(1 - cos**2);
+	const sin = sinMag * Math.sign(ax*by - ay*bx);
+
+	res[0] = cos;
+	res[1] = sin;
+	res[2] = -sin;
+	res[3] = cos;
+	res[4] = 0;
+	res[5] = 0;
+
 	return res;
 };

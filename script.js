@@ -13,7 +13,7 @@ const resetTransform = () => {
 	let { width, height } = satelliteImg;
 	const sx = canvas.width / width;
 	const sy = canvas.height / height;
-	const s = Math.min(sx, sy);
+	const s = Math.max(sx, sy);
 	transform[0] = s;
 	transform[1] = 0;
 	transform[2] = 0;
@@ -140,8 +140,10 @@ const handleTouch2Move = (x1, y1, x2, y2) => {
 	const s = M.vecLen(d1) / M.vecLen(d0);
 	
 	M.translateTransform(touchStart.t, M.vecSub(c1, c0), t);
-	const st = M.scaleTransform(M.clearTransform(), [ s, s ]);
-	M.combineTransformsAt(t, st, c1, t);
+	const m = M.clearTransform();
+	M.scaleTransform(m, [ s, s ], m);
+	M.combineTransforms(m, M.copyRotation(d0, d1), m);
+	M.combineTransformsAt(t, m, c1, t);
 	render();
 };
 
