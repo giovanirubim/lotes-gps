@@ -23,7 +23,7 @@ let lat = NaN;
 let lon = NaN;
 let selectedLabel = 0;
 let preventTap = false;
-let mapType = 1;
+let mapType = 0;
 
 let satelliteImg;
 let whiteMap;
@@ -405,11 +405,11 @@ const main = async () => {
 	resetTransform();
 	resizeCanvas();
 
-	// navigator.geolocation.watchPosition(
-	// 	handleLocation,
-	// 	handleLocationError,
-	// 	{ enableHighAccuracy: true },
-	// );
+	navigator.geolocation.watchPosition(
+		handleLocation,
+		handleLocationError,
+		{ enableHighAccuracy: true },
+	);
 };
 
 const tool = document.querySelector('#tool');
