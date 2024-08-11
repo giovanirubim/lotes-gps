@@ -26,11 +26,23 @@ let whiteMap;
 let transform = [ 1, 0, 0, 1, 0, 0 ];
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
 
+const mapData = {
+	points: [],
+	labels: [],
+};
+
 const coordToXY = (lat, lon) => {
 	const ny = (lat - minLat) / (maxLat - minLat);
 	const nx = (lon - minLon) / (maxLon - minLon);
 	const vec = [ nx * satelliteImg.width, (1 - ny) * satelliteImg.height ];
 	return M.applyTransform(vec, transform);
+};
+
+const xyToCoord = (vec) => {
+	const [ x, y ] = M.undoTransform(vec, transform);
+	const lon = (x / satelliteImg.width) * (maxLon - minLon) + minLon;
+	const lat = (1 - y / satelliteImg.height) * (maxLat - minLat) + minLat;
+	console.log([ lat, lon ]);
 };
 
 const moveToCoord = () => {
@@ -206,6 +218,10 @@ const handleTouch2Move = (x1, y1, x2, y2) => {
 	render();
 };
 
+const handleTap = (x, y) => {
+	const coord = xyToCoord([ x, y ]);
+	console.log(coord.map)
+};
 
 canvas.addEventListener('mousedown', e => {
 	if (e.button === 0) {
@@ -318,6 +334,21 @@ const main = async () => {
 		{ enableHighAccuracy: true },
 	);
 };
+
+const tool = document.querySelector('#tool');
+let toolId = 0;
+
+tool.addEventListener('click', () => {
+	const images = [ ...tool.children ];
+	toolId = (toolId + 1) % images.length;
+	images.forEach((img, i) => {
+		if (i === toolId) {
+			img.removeAttribute('hidden');
+		} else {
+			img.setAttribute('hidden', '');
+		}
+	});
+});
 
 main().catch((err) => {
 	log('error:', err.message);
