@@ -168,3 +168,7 @@ export const rotateTransform = (t, angle, res = []) => {
 	rotationTransform(angle, aux)
 	return combineTransforms(t, aux, res);
 };
+
+export const vecDist = ([ ax, ay ], [ bx, by ]) => {
+	return Math.sqrt((ax - bx)**2 + (ay - by)**2);
+};

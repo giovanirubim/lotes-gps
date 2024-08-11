@@ -17,21 +17,29 @@ const minLat = -25.49659 * deg;
 const maxLat = -25.49093 * deg;
 const minLon = -54.55207 * deg;
 const maxLon = -54.54451 * deg;
+const minDist = 15;
 
 let lat = NaN;
 let lon = NaN;
+let selectedLabel = 0;
+let preventTap = false;
+let mapType = 1;
 
 let satelliteImg;
 let whiteMap;
+let blackMap;
 let transform = [ 1, 0, 0, 1, 0, 0 ];
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
 
 const mapData = {
 	points: [],
-	labels: [],
+	labels: [{
+		name: 'test',
+		color: '#f00',
+	}],
 };
 
-const coordToXY = (lat, lon) => {
+const coordToXY = ([ lat, lon ]) => {
 	const ny = (lat - minLat) / (maxLat - minLat);
 	const nx = (lon - minLon) / (maxLon - minLon);
 	const vec = [ nx * satelliteImg.width, (1 - ny) * satelliteImg.height ];
@@ -42,12 +50,12 @@ const xyToCoord = (vec) => {
 	const [ x, y ] = M.undoTransform(vec, transform);
 	const lon = (x / satelliteImg.width) * (maxLon - minLon) + minLon;
 	const lat = (1 - y / satelliteImg.height) * (maxLat - minLat) + minLat;
-	console.log([ lat, lon ]);
+	return [ lat, lon ];
 };
 
 const moveToCoord = () => {
 	const a = [ canvas.width * 0.5, canvas.height * 0.5 ];
-	const b = coordToXY(lat, lon);
+	const b = coordToXY([ lat, lon ]);
 	const d = M.vecSub(a, b);
 	const t = [ ...transform ];
 	animate(val => {
@@ -119,14 +127,50 @@ const clearCanvas = () => {
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 };
 
+const drawPoints = () => {
+	const { labels, points } = mapData;
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
+	for (const point of points) {
+		const [ x, y ] = coordToXY(point.coord);
+		if (x < 0 || x > canvas.width) {
+			continue;
+		}
+		if (y < 0 || y > canvas.height) {
+			continue;
+		}
+		const label = labels[point.label];
+		
+		ctx.fillStyle = label.color;
+		ctx.beginPath();
+		ctx.arc(x, y, 5, 0, Math.PI*2);
+		ctx.fill();
+
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
+		ctx.stroke();
+		
+		ctx.lineWidth = 1.5;
+		ctx.strokeStyle = '#fff';
+		ctx.stroke();
+	}
+};
+
 const render = () => {
-	clearCanvas();
 	if (!satelliteImg) {
 		return;
 	}
-	drawImage(satelliteImg);
-	overlayMap();
+	if (mapType === 0) {
+		clearCanvas();
+		drawImage(satelliteImg);
+		overlayMap();
+	} else {
+		ctx.fillStyle = '#ccc';
+		ctx.setTransform(1, 0, 0, 1, 0, 0);
+		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		drawImage(blackMap);
+	}
 	updateCompass();
+	drawPoints();
 };
 
 const log = (...args) => {
@@ -153,6 +197,7 @@ window.addEventListener('resize', resizeCanvas);
 
 let touchStart = null;
 const handleTouch1Start = (x, y) => {
+	preventTap = false;
 	const mouse = [ x, y ];
 	const t = [ ...transform ];
 	touchStart = { mouse, t, second: null };
@@ -173,6 +218,7 @@ const enableGPS = () => {
 
 const handleTouch1Move = (x, y) => {
 	disableGPS();
+	preventTap = true;
 	const { mouse } = touchStart;
 	const dx = x - mouse[0];
 	const dy = y - mouse[1];
@@ -218,10 +264,40 @@ const handleTouch2Move = (x1, y1, x2, y2) => {
 	render();
 };
 
-const handleTap = (x, y) => {
-	const coord = xyToCoord([ x, y ]);
-	console.log(coord.map)
+const removePoint = (point) => {
+	const { points } = mapData;
+	let index = null;
+	let dist = Infinity;
+	for (let i=0; i<points.length; ++i) {
+		const d = M.vecDist(point, coordToXY(points[i].coord));
+		if (d < minDist && d < dist) {
+			dist = d;
+			index = i;
+		}
+	}
+	if (index !== null) {
+		points.splice(index, 1);
+	}
 };
+
+const handleTap = (x, y) => {
+	if (toolId === 0) {
+		const coord = xyToCoord([ x, y ]);
+		const time = Math.round(Date.now() / 1000);
+		mapData.points.push({ coord, label: selectedLabel, time });
+	}
+	if (toolId === 1) {
+		removePoint([ x, y ]);
+	}
+	render();
+};
+
+canvas.addEventListener('click', e => {
+	if (preventTap) {
+		return;
+	}
+	handleTap(e.offsetX, e.offsetY);
+});
 
 canvas.addEventListener('mousedown', e => {
 	if (e.button === 0) {
@@ -325,14 +401,15 @@ const handleLocationError = (err) => {
 const main = async () => {
 	satelliteImg = await loadImage('./img/satellite.png');
 	whiteMap     = await loadImage('./img/white-map.png');
+	blackMap     = await loadImage('./img/black-map.png');
 	resetTransform();
 	resizeCanvas();
 
-	navigator.geolocation.watchPosition(
-		handleLocation,
-		handleLocationError,
-		{ enableHighAccuracy: true },
-	);
+	// navigator.geolocation.watchPosition(
+	// 	handleLocation,
+	// 	handleLocationError,
+	// 	{ enableHighAccuracy: true },
+	// );
 };
 
 const tool = document.querySelector('#tool');
