@@ -1,4 +1,5 @@
 import { animate, smooth } from './animate.js';
+import { hasClass, toggleClass } from './style.js';
 import './math.js';
 import * as M from './math.js';
 
@@ -6,10 +7,42 @@ const canvas = document.querySelector('canvas');
 const textarea = document.querySelector('textarea');
 const ctx = canvas.getContext('2d');
 const compassImg = document.querySelector('#compass img');
+const locationImg = document.querySelector('#location img');
+const deg = Math.PI / 180;
+
+// Bottom-left: -25.49659, -54.55207
+// Top-right:   -25.49093, -54.54451
+
+const minLat = -25.49659 * deg;
+const maxLat = -25.49093 * deg;
+const minLon = -54.55207 * deg;
+const maxLon = -54.54451 * deg;
+
+let lat = (minLat + maxLat)/2;
+let lon = (minLon + maxLon)/2;
 
 let satelliteImg;
 let whiteMap;
 let transform = [ 1, 0, 0, 1, 0, 0 ];
+let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
+
+const coordToXY = (lat, lon) => {
+	const ny = (lat - minLat) / (maxLat - minLat);
+	const nx = (lon - minLon) / (maxLon - minLon);
+	const vec = [ nx * satelliteImg.width, (1 - ny) * satelliteImg.height ];
+	return M.applyTransform(vec, transform);
+};
+
+const moveToCoord = () => {
+	const a = [ canvas.width * 0.5, canvas.height * 0.5 ];
+	const b = coordToXY(lat, lon);
+	const d = M.vecSub(a, b);
+	const t = [ ...transform ];
+	animate(val => {
+		M.translateTransform(t, M.scaleVec(d, smooth(val)), transform);
+		render();
+	}, 500);
+};
 
 const resetTransform = () => {
 	let { width, height } = satelliteImg;
@@ -47,11 +80,12 @@ const restoreNorth = () => {
 	const rot = M.clearTransform();
 	const cx = canvas.width  * 0.5;
 	const cy = canvas.height * 0.5;
+	const time = Math.sqrt(Math.abs(azm) / Math.PI) * 500;
 	animate(t => {
 		M.rotationTransform(-smooth(t)*azm, rot);
 		M.combineTransformsAt(m, rot, [ cx, cy ], transform);
 		render();
-	}, 500);
+	}, time);
 };
 
 const updateCompass = () => {
@@ -103,18 +137,7 @@ const resizeCanvas = () => {
 	render();
 };
 
-const main = async () => {
-	satelliteImg = await loadImage('./img/satellite.png');
-	whiteMap     = await loadImage('./img/white-map.png');
-	resetTransform();
-	resizeCanvas();
-};
-
 window.addEventListener('resize', resizeCanvas);
-
-main().catch((err) => {
-	log('error:', err.message);
-});
 
 let touchStart = null;
 const handleTouch1Start = (x, y) => {
@@ -169,11 +192,13 @@ const handleTouch2Move = (x1, y1, x2, y2) => {
 	render();
 };
 
+
 canvas.addEventListener('mousedown', e => {
 	if (e.button === 0) {
 		handleTouch1Start(e.offsetX, e.offsetY);
 	}
 });
+
 canvas.addEventListener('mousemove', e => {
 	if (e.buttons & 1) {
 		handleTouch1Move(e.offsetX, e.offsetY);
@@ -181,33 +206,25 @@ canvas.addEventListener('mousemove', e => {
 		handleTouchEnd(e.offsetX, e.offsetY);
 	}
 });
+
 canvas.addEventListener('mouseout', e => {
 	if (e.button === 0) {
 		handleTouchEnd(e.offsetX, e.offsetY);
 	}
 });
-const validateTouchIds = (touches) => {
-	for (let i=0; i<touches.length; ++i) {
-		if (touches[i].identifier !== i) {
-			return false;
-		}
-	}
-	return true;
-};
+
 canvas.addEventListener('touchstart', e => {
 	const { touches } = e;
 	if (touches.length === 1) {
 		const [ touch ] = touches;
 		handleTouch1Start(touch.pageX, touch.pageY);
 	}
-	if (!validateTouchIds(touches)) {
-		return;
-	}
 	if (touches.length === 2) {
 		const [ a, b ] = touches;
 		handleTouch2Start(a.pageX, a.pageY, b.pageX, b.pageY);
 	}
 });
+
 canvas.addEventListener('touchmove', e => {
 	const { touches } = e;
 	if (!touchStart) {
@@ -223,15 +240,67 @@ canvas.addEventListener('touchmove', e => {
 			handleTouch2Move(a.pageX, a.pageY, b.pageX, b.pageY);
 		} catch(e) {
 			clearLog();
-			log(`Error: ${e.message}`);
+			log(`error: ${e.message}`);
 			log(e.stack);
 		}
 	}
 	e.preventDefault();
 });
+
 canvas.addEventListener('touchend', () => {
 	if (touchStart) {
 		handleTouchEnd();
 	}
 });
+
+canvas.addEventListener('wheel', e => {
+	e.preventDefault();
+	const m = M.clearTransform();
+	const c = [ e.offsetX, e.offsetY ];
+	if (e.shiftKey) {
+		const angle = e.deltaY * 0.002;
+		M.rotateTransform(m, angle, m);
+	} else {
+		const s = (1 - e.deltaY * 0.002);
+		M.scaleTransform(m, [ s, s ], m);
+	}
+	M.combineTransformsAt(transform, m, c, transform);
+	render();
+});
+
 compassImg.parentElement.addEventListener('click', restoreNorth);
+
+locationImg.parentElement.addEventListener('click', () => {
+	gpsOn = !toggleClass(locationImg.parentElement, 'disabled');
+});
+
+const handleLocation = (data) => {
+	const { latitude, longitude } = data.coords;
+	lat = latitude * deg;
+	lon = longitude * deg;
+	if (gpsOn) {
+		moveToCoord();
+	}
+};
+
+const handleLocationError = (err) => {
+	log(`error: ${err.message || `GeolocationPositionError ${err.code}`}`);
+	log(err.stack);
+};
+
+const main = async () => {
+	satelliteImg = await loadImage('./img/satellite.png');
+	whiteMap     = await loadImage('./img/white-map.png');
+	resetTransform();
+	resizeCanvas();
+
+	navigator.geolocation.watchPosition(
+		handleLocation,
+		handleLocationError,
+		{ enableHighAccuracy: true },
+	);
+};
+
+main().catch((err) => {
+	log('error:', err.message);
+});
