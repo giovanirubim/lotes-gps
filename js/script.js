@@ -147,13 +147,13 @@ const handleTouch1Start = (x, y) => {
 };
 
 const disableGPS = () => {
-	gpsOn = false;
 	addClass(locationImg.parentElement, 'disabled');
+	gpsOn = false;
 };
 
 const enableGPS = () => {
-	gpsOn = true;
 	removeClass(locationImg.parentElement, 'disabled');
+	gpsOn = true;
 	if (!isNaN(lat)) {
 		moveToCoord();
 	}
@@ -285,10 +285,10 @@ canvas.addEventListener('wheel', e => {
 compassImg.parentElement.addEventListener('click', restoreNorth);
 
 locationImg.parentElement.addEventListener('click', () => {
-	if (toggleClass(locationImg.parentElement, 'disabled')) {
-		disableGPS();
-	} else {
+	if (hasClass(locationImg.parentElement, 'disabled')) {
 		enableGPS();
+	} else {
+		disableGPS();
 	}
 });
 
