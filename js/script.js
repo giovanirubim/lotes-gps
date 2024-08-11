@@ -274,7 +274,12 @@ compassImg.parentElement.addEventListener('click', restoreNorth);
 
 locationImg.parentElement.addEventListener('click', () => {
 	gpsOn = !toggleClass(locationImg.parentElement, 'disabled');
-	autoFocus = gpsOn;
+	if (gpsOn) {
+		autoFocus = true;
+		if (!isNaN(lat)) {
+			moveToCoord();
+		}
+	}
 });
 
 const handleLocation = (data) => {
