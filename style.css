@@ -21,21 +21,22 @@ textarea {
 	font-size: 8px;
 }
 div.buttons {
-	padding: 5px;
-	background-color: rgba(0, 0, 0, 0.5);
 	position: fixed;
-	left: 0px;
-	right: 0px;
-	bottom: 0px;
+	right: 10px;
+	bottom: 10px;
 	font-size: 0px;
 }
-div.buttons button:not(button:nth-child(1)) {
-	margin-left: 5px;
-}
 div.buttons button {
-	vertical-align: top;
-	border: none;
-	height: 30px;
-	width: 30px;
-	cursor: pointer;
+	padding: 3px;
+	border: 4px solid #aaa;
+	background-color: rgba(0, 0, 0, 0.75);
+	border-radius: 50%;
+	opacity: 0.75;
+}
+div.buttons button img {
+	width: 48px;
+	height: 48px;
+}
+div.buttons button:not(button:nth-child(1)) {
+	margin-left: 10px;
 }

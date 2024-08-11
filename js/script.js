@@ -58,6 +58,7 @@ const render = () => {
 };
 
 const log = (...args) => {
+	textarea.parentElement.style.display = 'block';
 	if (textarea.value !== '' && !textarea.value.endsWith('\n')) {
 		textarea.value += '\n';
 	}
@@ -69,10 +70,6 @@ const clearLog = () => {
 	textarea.value = '';
 };
 
-const showLog = () => {
-	textarea.parentElement.style.display = 'block';
-};
-
 const resizeCanvas = () => {
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
@@ -81,8 +78,8 @@ const resizeCanvas = () => {
 };
 
 const main = async () => {
-	satelliteImg = await loadImage('./satellite.png');
-	whiteMap     = await loadImage('./white-map.png');
+	satelliteImg = await loadImage('./img/satellite.png');
+	whiteMap     = await loadImage('./img/white-map.png');
 	resetTransform();
 	resizeCanvas();
 };
@@ -91,7 +88,6 @@ window.addEventListener('resize', resizeCanvas);
 
 main().catch((err) => {
 	log('error:', err.message);
-	showLog();
 });
 
 let touchStart = null;
