@@ -212,4 +212,3 @@ canvas.addEventListener('touchend', () => {
 		handleTouchEnd();
 	}
 });
-showLog();
