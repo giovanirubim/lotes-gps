@@ -25,6 +25,7 @@ let satelliteImg;
 let whiteMap;
 let transform = [ 1, 0, 0, 1, 0, 0 ];
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
+let autoFocus = false;
 
 const coordToXY = (lat, lon) => {
 	const ny = (lat - minLat) / (maxLat - minLat);
@@ -147,6 +148,7 @@ const handleTouch1Start = (x, y) => {
 };
 
 const handleTouch1Move = (x, y) => {
+	autoFocus = false;
 	const { mouse } = touchStart;
 	const dx = x - mouse[0];
 	const dy = y - mouse[1];
@@ -272,13 +274,14 @@ compassImg.parentElement.addEventListener('click', restoreNorth);
 
 locationImg.parentElement.addEventListener('click', () => {
 	gpsOn = !toggleClass(locationImg.parentElement, 'disabled');
+	autoFocus = gpsOn;
 });
 
 const handleLocation = (data) => {
 	const { latitude, longitude } = data.coords;
 	lat = latitude * deg;
 	lon = longitude * deg;
-	if (gpsOn) {
+	if (gpsOn && autoFocus) {
 		moveToCoord();
 	}
 };
