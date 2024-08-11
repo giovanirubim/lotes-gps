@@ -1,5 +1,5 @@
 import { animate, smooth } from './animate.js';
-import { hasClass, toggleClass } from './style.js';
+import { addClass, hasClass, removeClass, toggleClass } from './style.js';
 import './math.js';
 import * as M from './math.js';
 
@@ -18,14 +18,13 @@ const maxLat = -25.49093 * deg;
 const minLon = -54.55207 * deg;
 const maxLon = -54.54451 * deg;
 
-let lat = (minLat + maxLat)/2;
-let lon = (minLon + maxLon)/2;
+let lat = NaN;
+let lon = NaN;
 
 let satelliteImg;
 let whiteMap;
 let transform = [ 1, 0, 0, 1, 0, 0 ];
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
-let autoFocus = false;
 
 const coordToXY = (lat, lon) => {
 	const ny = (lat - minLat) / (maxLat - minLat);
@@ -147,8 +146,21 @@ const handleTouch1Start = (x, y) => {
 	touchStart = { mouse, t, second: null };
 };
 
+const disableGPS = () => {
+	gpsOn = false;
+	addClass(locationImg.parentElement, 'disabled');
+};
+
+const enableGPS = () => {
+	gpsOn = true;
+	removeClass(locationImg.parentElement, 'disabled');
+	if (!isNaN(lat)) {
+		moveToCoord();
+	}
+};
+
 const handleTouch1Move = (x, y) => {
-	autoFocus = false;
+	disableGPS();
 	const { mouse } = touchStart;
 	const dx = x - mouse[0];
 	const dy = y - mouse[1];
@@ -273,12 +285,10 @@ canvas.addEventListener('wheel', e => {
 compassImg.parentElement.addEventListener('click', restoreNorth);
 
 locationImg.parentElement.addEventListener('click', () => {
-	gpsOn = !toggleClass(locationImg.parentElement, 'disabled');
-	if (gpsOn) {
-		autoFocus = true;
-		if (!isNaN(lat)) {
-			moveToCoord();
-		}
+	if (toggleClass(locationImg.parentElement, 'disabled')) {
+		disableGPS();
+	} else {
+		enableGPS();
 	}
 });
 
@@ -286,7 +296,7 @@ const handleLocation = (data) => {
 	const { latitude, longitude } = data.coords;
 	lat = latitude * deg;
 	lon = longitude * deg;
-	if (gpsOn && autoFocus) {
+	if (gpsOn) {
 		moveToCoord();
 	}
 };
