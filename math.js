@@ -1,10 +1,3 @@
-const copy = (src, res = []) => {
-	for (let i=0; i<src.length; ++i) {
-		res[i] = src[i];
-	}
-	return res;
-};
-
 export const applyTransform = ([ x, y ], t, res = []) => {
 	const [ ix, iy, jx, jy, kx, ky ] = t;
 	res[0] = x*ix + y*jx + kx;
@@ -28,7 +21,7 @@ export const combineTransforms = (a, b, res = []) => {
 	return res;
 };
 
-export const scaleTransform = (t, sx, sy, res = []) => {
+export const scaleTransform = (t, [ sx, sy ], res = []) => {
 	const [ ix, iy, jx, jy, kx, ky ] = t;
 	res[0] = ix*sx;
 	res[1] = iy*sy;
@@ -73,7 +66,7 @@ export const undoTransform = (vec, t, res = []) => {
 	return res;
 };
 
-export const translateTransform = (t, dx, dy, res = []) => {
+export const translateTransform = (t, [ dx, dy ], res = []) => {
 	const [ ix, iy, jx, jy, kx, ky ] = t;
 	res[0] = ix;
 	res[1] = iy;
@@ -89,4 +82,44 @@ export const getScale = (t) => {
 	const si = Math.sqrt(ix**2 + iy**2);
 	const sj = Math.sqrt(jx**2 + jy**2);
 	return (si + sj)/2;
+};
+
+export const vecSum = ([ ax, ay ], [ bx, by ], res = []) => {
+	res[0] = ax + bx;
+	res[1] = ay + by;
+	return res;
+};
+
+export const vecSub = ([ ax, ay ], [ bx, by ], res = []) => {
+	res[0] = ax - bx;
+	res[1] = ay - by;
+	return res;
+};
+
+export const scaleVec = ([ x, y ], scalar, res = []) => {
+	res[0] = x * scalar;
+	res[1] = y * scalar;
+	return res;
+};
+
+export const divVec = ([ x, y ], scalar, res = []) => {
+	res[0] = x / scalar;
+	res[1] = y / scalar;
+	return res;
+};
+
+export const vecLen = ([ x, y ]) => {
+	return Math.sqrt(x**2 + y**2);
+};
+
+export const normalize = (v, res = []) => {
+	return divVec(v, vecLen(v), res);
+};
+
+export const combineTransformsAt = (a, b, origin, res = []) => {
+	const [ x, y ] = origin;
+	translateTransform(a, [ -x, -y ], res);
+	combineTransforms(res, b, res);
+	translateTransform(res, origin, res);
+	return res;
 };
