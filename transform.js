@@ -72,3 +72,21 @@ export const undoTransform = (vec, t, res = []) => {
 	applyTransform(vec, aux, res);
 	return res;
 };
+
+export const translateTransform = (t, dx, dy, res = []) => {
+	const [ ix, iy, jx, jy, kx, ky ] = t;
+	res[0] = ix;
+	res[1] = iy;
+	res[2] = jx;
+	res[3] = jy;
+	res[4] = kx + dx;
+	res[5] = ky + dy;
+	return res;
+};
+
+export const getScale = (t) => {
+	const [ ix, iy, jx, jy, _kx, _ky ] = t;
+	const si = Math.sqrt(ix**2 + iy**2);
+	const sj = Math.sqrt(jx**2 + jy**2);
+	return (si + sj)/2;
+};

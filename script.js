@@ -1,5 +1,5 @@
 import './transform.js';
-import { undoTransform } from './transform.js';
+import { getScale, translateTransform, undoTransform } from './transform.js';
 
 const canvas = document.querySelector('canvas');
 const textarea = document.querySelector('textarea');
@@ -59,13 +59,19 @@ const render = () => {
 };
 
 const log = (...args) => {
-	textarea.value += args.join(' ') + '\n';
+	if (textarea.value !== '' && !textarea.value.endsWith('\n')) {
+		textarea.value += '\n';
+	}
+	textarea.value += args.join(' ');
 	textarea.scrollTop = textarea.scrollHeight;
 };
 
+const clearLog = () => {
+	textarea.value = '';
+};
+
 const showLog = () => {
-	const div = document.querySelector('textarea').parentElement;
-	div.style.display = 'block';
+	textarea.parentElement.style.display = 'block';
 };
 
 const resizeCanvas = () => {
@@ -98,11 +104,15 @@ const handleTouch1Start = (x, y) => {
 };
 
 const handleTouch1Move = (x, y) => {
-	
+	const { mouse } = touch1Start;
+	const dx = x - mouse[0];
+	const dy = y - mouse[1];
+	translateTransform(touch1Start.t, dx, dy, transform);
+	render();
 };
 
 const handleTouch1End = (x, y) => {
-	
+	touch1Start = null;
 };
 
 canvas.addEventListener('mousedown', e => {
@@ -122,3 +132,18 @@ canvas.addEventListener('mouseout', e => {
 		handleTouch1End(e.offsetX, e.offsetY);
 	}
 });
+canvas.addEventListener('touchstart', e => {
+	const { touches } = e;
+	if (touches.length === 1) {
+		const [ touch ] = touches;
+		handleTouch1Start(touch.pageX, touch.pageY);
+	}
+});
+canvas.addEventListener('touchmove', e => {
+	const { touches } = e;
+	if (touches.length === 1 && touches[0].identifier === 0) {
+		const t = touches[0];
+		handleTouch1Move(t.pageX, t.pageY);
+	}
+});
+showLog();
