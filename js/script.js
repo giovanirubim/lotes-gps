@@ -2,7 +2,7 @@ import { animate, smooth } from './animate.js';
 import { addClass, hasClass, removeClass, toggleClass } from './style.js';
 import './math.js';
 import * as M from './math.js';
-import { loadMapData } from './data.js';
+import { loadMapData, storeMapData } from './data.js';
 
 const getDOM = (querySelector) => {
 	return document.querySelector(querySelector);
@@ -141,7 +141,7 @@ const clearCanvas = () => {
 const colorToBG = (color) => {
 	const hex = [ ...color.replace('#', '').match(/../g) ];
 	const sum = hex.map(x => parseInt(x, 16)).reduce((a, b) => a + b);
-	return (sum / 3 / 255) > 0.35 ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)';
+	return (sum / 3 / 255) > 0.35 ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.5)';
 };
 
 const drawPoints = () => {
@@ -321,7 +321,9 @@ const removePoint = (point) => {
 	}
 	if (index !== null) {
 		points.splice(index, 1);
+		return true;
 	}
+	return false;
 };
 
 const handleTap = async (x, y) => {
@@ -332,6 +334,14 @@ const handleTap = async (x, y) => {
 		selectedLabel = null;
 		disable(DOM.add_button);
 		render();
+		storeMapData(mapData);
+		return;
+	}
+	if (removing) {
+		if (removePoint([ x, y ])) {
+			render();
+			storeMapData(mapData);
+		}
 	}
 };
 
@@ -479,6 +489,7 @@ const addLabelButton = ({ name, color }, id) => {
 	});
 	input.addEventListener('change', () => {
 		mapData.labels[id].color = input.value;
+		storeMapData(mapData);
 		render();
 	});
 };
@@ -531,6 +542,7 @@ document.querySelector('#add-label').addEventListener('click', () => {
 	addLabelButton(label, labelId);
 	hideLabelSelection();
 	handleLabelSelection?.(labelId);
+	storeMapData(mapData);
 });
 
 const selectLabel = () => new Promise((done) => {

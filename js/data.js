@@ -19,3 +19,7 @@ export const loadMapData = async () => {
 		labels: [],
 	};
 };
+
+export const storeMapData = (mapData) => {
+	localStorage.setItem('map-data', JSON.stringify(mapData));
+};
