@@ -22,10 +22,10 @@ const locationImg = document.querySelector('#location img');
 const mapImg = document.querySelector('#map img');
 const deg = Math.PI / 180;
 
-const minLat = -25.49659 * deg;
-const maxLat = -25.49093 * deg;
-const minLon = -54.55207 * deg;
-const maxLon = -54.54451 * deg;
+const minLat = -25.49389 * deg;
+const maxLat = -25.48889 * deg;
+const minLon = -54.56778 * deg;
+const maxLon = -54.56528 * deg;
 const minDist = 15;
 
 let lat = NaN;
