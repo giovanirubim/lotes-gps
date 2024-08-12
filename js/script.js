@@ -2,10 +2,21 @@ import { animate, smooth } from './animate.js';
 import { addClass, hasClass, removeClass, toggleClass } from './style.js';
 import './math.js';
 import * as M from './math.js';
+import { loadMapData } from './data.js';
 
-const canvas = document.querySelector('canvas');
+const getDOM = (querySelector) => {
+	return document.querySelector(querySelector);
+};
+
+const DOM = {
+	canvas: getDOM('canvas'),
+	add_button: getDOM('#add'),
+	remove: getDOM('#remove'),
+	text: getDOM('#text'),
+};
+
 const textarea = document.querySelector('textarea');
-const ctx = canvas.getContext('2d');
+const ctx = DOM.canvas.getContext('2d');
 const compassImg = document.querySelector('#compass img');
 const locationImg = document.querySelector('#location img');
 const mapImg = document.querySelector('#map img');
@@ -22,22 +33,16 @@ let lon = NaN;
 let preventTap = false;
 let mapType = 0;
 
+let selectedLabel = null;
 let satelliteImg;
 let whiteMap;
 let blackMap;
 let transform = [ 1, 0, 0, 1, 0, 0 ];
+let withText = false;
+let removing = false;
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
 
-const mapData = {
-	points: [],
-	labels: [{
-		name: 'Boca de lobo',
-		color: '#0077ff',
-	}, {
-		name: 'Árvore alta',
-		color: '#007700',
-	}],
-};
+const mapData = await loadMapData();
 
 const coordToXY = ([ lat, lon ]) => {
 	const ny = (lat - minLat) / (maxLat - minLat);
@@ -54,7 +59,8 @@ const xyToCoord = (vec) => {
 };
 
 const moveToCoord = () => {
-	const a = [ canvas.width * 0.5, canvas.height * 0.5 ];
+	const { width, height } = DOM.canvas;
+	const a = [ width * 0.5, height * 0.5 ];
 	const b = coordToXY([ lat, lon ]);
 	const d = M.vecSub(a, b);
 	const t = [ ...transform ];
@@ -66,15 +72,15 @@ const moveToCoord = () => {
 
 const resetTransform = () => {
 	let { width, height } = satelliteImg;
-	const sx = canvas.width / width;
-	const sy = canvas.height / height;
+	const sx = DOM.canvas.width / width;
+	const sy = DOM.canvas.height / height;
 	const s = Math.max(sx, sy);
 	transform[0] = s;
 	transform[1] = 0;
 	transform[2] = 0;
 	transform[3] = s;
-	transform[4] = (canvas.width  - width*s)  * 0.5;
-	transform[5] = (canvas.height - height*s) * 0.5;
+	transform[4] = (DOM.canvas.width  - width*s)  * 0.5;
+	transform[5] = (DOM.canvas.height - height*s) * 0.5;
 };
 
 const drawImage = (img) => {
@@ -94,13 +100,17 @@ const calcAzm = () => {
 	return M.calcAngle(ix, iy);
 };
 
-const restoreNorth = () => {
+const alignWithCompass = () => {
 	const m = [ ...transform ];
 	const azm = calcAzm();
 	const rot = M.clearTransform();
-	const cx = canvas.width  * 0.5;
-	const cy = canvas.height * 0.5;
+	const { width, height } = DOM.canvas;
+	const cx = width  * 0.5;
+	const cy = height * 0.5;
 	const time = Math.sqrt(Math.abs(azm) / Math.PI) * 500;
+	if (azm === 0) {
+		return;
+	}
 	animate(t => {
 		M.rotationTransform(-smooth(t)*azm, rot);
 		M.combineTransformsAt(m, rot, [ cx, cy ], transform);
@@ -123,19 +133,33 @@ const loadImage = (src) => {
 };
 
 const clearCanvas = () => {
+	const { width, height } = DOM.canvas;
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	ctx.clearRect(0, 0, width, height);
+};
+
+const colorToBG = (color) => {
+	const hex = [ ...color.replace('#', '').match(/../g) ];
+	const sum = hex.map(x => parseInt(x, 16)).reduce((a, b) => a + b);
+	return (sum / 3 / 255) > 0.35 ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)';
 };
 
 const drawPoints = () => {
 	const { labels, points } = mapData;
+	const { width, height } = DOM.canvas;
+
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+	ctx.font = '14px Arial';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'bottom';
+
 	for (const point of points) {
 		const [ x, y ] = coordToXY(point.coord);
-		if (x < 0 || x > canvas.width) {
+		if (x < 0 || x > width) {
 			continue;
 		}
-		if (y < 0 || y > canvas.height) {
+		if (y < 0 || y > height) {
 			continue;
 		}
 		const label = labels[point.label];
@@ -144,6 +168,18 @@ const drawPoints = () => {
 		ctx.beginPath();
 		ctx.arc(x, y, 5, 0, Math.PI*2);
 		ctx.fill();
+
+		if (withText) {
+			const metric = ctx.measureText(label.name);
+			const ty = y - 10;
+			const gap = 3;
+	
+			ctx.fillStyle = colorToBG(label.color);
+			ctx.fillRect(x - metric.width / 2 - gap, ty - 16, metric.width + 2*gap, 16);
+	
+			ctx.fillStyle = label.color;
+			ctx.fillText(label.name, x, ty);
+		}
 
 		ctx.lineWidth = 2;
 		ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
@@ -164,9 +200,10 @@ const render = () => {
 		drawImage(satelliteImg);
 		overlayMap();
 	} else {
+		const { width, height } = DOM.canvas;
 		ctx.fillStyle = '#ccc';
 		ctx.setTransform(1, 0, 0, 1, 0, 0);
-		ctx.fillRect(0, 0, canvas.width, canvas.height);
+		ctx.fillRect(0, 0, width, height);
 		drawImage(blackMap);
 	}
 	updateCompass();
@@ -182,11 +219,18 @@ const log = (...args) => {
 	textarea.scrollTop = textarea.scrollHeight;
 };
 
+const logErr = (err) => {
+	log(`Error: ${err.message}`);
+	log(err.stack);
+	console.log(err);
+};
+
 const clearLog = () => {
 	textarea.value = '';
 };
 
 const resizeCanvas = () => {
+	const { canvas } = DOM;
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 	resetTransform();
@@ -281,30 +325,30 @@ const removePoint = (point) => {
 };
 
 const handleTap = async (x, y) => {
-	const labelId = await selectLabel();
-	if (labelId == null) {
-		return;
+	if (selectedLabel != null) {
+		const coord = xyToCoord([ x, y ]);
+		const time = Math.round(Date.now() / 1000);
+		mapData.points.push({ coord, label: selectedLabel, time });
+		selectedLabel = null;
+		disable(DOM.add_button);
+		render();
 	}
-	const coord = xyToCoord([ x, y ]);
-	const time = Math.round(Date.now() / 1000);
-	mapData.points.push({ coord, label: labelId, time });
-	render();
 };
 
-canvas.addEventListener('click', e => {
+DOM.canvas.addEventListener('click', e => {
 	if (preventTap) {
 		return;
 	}
 	handleTap(e.offsetX, e.offsetY);
 });
 
-canvas.addEventListener('mousedown', e => {
+DOM.canvas.addEventListener('mousedown', e => {
 	if (e.button === 0) {
 		handleTouch1Start(e.offsetX, e.offsetY);
 	}
 });
 
-canvas.addEventListener('mousemove', e => {
+DOM.canvas.addEventListener('mousemove', e => {
 	if (e.buttons & 1) {
 		if (touchStart) {
 			handleTouch1Move(e.offsetX, e.offsetY);
@@ -316,13 +360,13 @@ canvas.addEventListener('mousemove', e => {
 	}
 });
 
-canvas.addEventListener('mouseout', e => {
+DOM.canvas.addEventListener('mouseout', e => {
 	if (e.button === 0) {
 		handleTouchEnd(e.offsetX, e.offsetY);
 	}
 });
 
-canvas.addEventListener('touchstart', e => {
+DOM.canvas.addEventListener('touchstart', e => {
 	const { touches } = e;
 	if (touches.length === 1) {
 		const [ touch ] = touches;
@@ -334,7 +378,7 @@ canvas.addEventListener('touchstart', e => {
 	}
 });
 
-canvas.addEventListener('touchmove', e => {
+DOM.canvas.addEventListener('touchmove', e => {
 	const { touches } = e;
 	if (!touchStart) {
 		return;
@@ -349,20 +393,19 @@ canvas.addEventListener('touchmove', e => {
 			handleTouch2Move(a.pageX, a.pageY, b.pageX, b.pageY);
 		} catch(e) {
 			clearLog();
-			log(`error: ${e.message}`);
-			log(e.stack);
+			logErr(e);
 		}
 	}
 	e.preventDefault();
 });
 
-canvas.addEventListener('touchend', () => {
+DOM.canvas.addEventListener('touchend', () => {
 	if (touchStart) {
 		handleTouchEnd();
 	}
 });
 
-canvas.addEventListener('wheel', e => {
+DOM.canvas.addEventListener('wheel', e => {
 	e.preventDefault();
 	const m = M.clearTransform();
 	const c = [ e.offsetX, e.offsetY ];
@@ -377,7 +420,7 @@ canvas.addEventListener('wheel', e => {
 	render();
 });
 
-compassImg.parentElement.addEventListener('click', restoreNorth);
+compassImg.parentElement.addEventListener('click', alignWithCompass);
 
 locationImg.parentElement.addEventListener('click', () => {
 	if (hasClass(locationImg.parentElement, 'disabled')) {
@@ -397,8 +440,7 @@ const handleLocation = (data) => {
 };
 
 const handleLocationError = (err) => {
-	log(`error: ${err.message || `GeolocationPositionError ${err.code}`}`);
-	log(err.stack);
+	logErr(new Error(`${err.message || `GeolocationPositionError ${err.code}`}`))
 };
 
 const main = async () => {
@@ -429,8 +471,15 @@ const addLabelButton = ({ name, color }, id) => {
 	const input = item.querySelector('input');
 	input.value = color;
 	list.appendChild(item);
-	item.addEventListener('click', () => {
+	item.addEventListener('click', (e) => {
+		if (e.target !== item) {
+			return;
+		}
 		handleLabelSelection?.(id);
+	});
+	input.addEventListener('change', () => {
+		mapData.labels[id].color = input.value;
+		render();
 	});
 };
 
@@ -502,8 +551,51 @@ document.querySelector('#edit').addEventListener('click', () => {
 	showLabelSelection();
 });
 
+const tools = [ DOM.add_button, DOM.remove ];
+
+const enableOnly = (target) => {
+	tools.forEach(dom => {
+		if (dom === target) {
+			removeClass(dom, 'disabled');
+		} else {
+			addClass(dom, 'disabled');
+		}
+	});
+};
+
+const disable = (tool) => {
+	addClass(tool, 'disabled');
+};
+
+DOM.add_button.addEventListener('click', async () => {
+	if (selectedLabel != null) {
+		enableOnly(null);
+		selectedLabel = null;
+	} else {
+		selectedLabel = await selectLabel();
+		if (selectedLabel == null) {
+			disable(DOM.add_button);
+		} else {
+			enableOnly(DOM.add_button);
+		}
+	}
+});
+
+DOM.text.addEventListener('click', () => {
+	withText = !toggleClass(DOM.text, 'disabled');
+	render();
+});
+
+DOM.remove.addEventListener('click', () => {
+	removing = !removing;
+	if (removing) {
+		enableOnly(DOM.remove);
+	} else {
+		enableOnly(null);
+	}
+	render();
+});
+
 mapData.labels.forEach(addLabelButton);
 
-main().catch((err) => {
-	log('error:', err.message);
-});
+main().catch(logErr);

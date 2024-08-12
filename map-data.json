@@ -1,0 +1,21 @@
+{
+	"points": [
+		{
+			"coord": [
+				-0.4449386485938139,
+				-0.9520464505722911
+			],
+			"label": 0
+		}
+	],
+	"labels": [
+		{
+			"name": "Boca de lobo",
+			"color": "#0077ff"
+		},
+		{
+			"name": "Árvore alta",
+			"color": "#007700"
+		}
+	]
+}
