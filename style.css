@@ -28,6 +28,8 @@ div.buttons {
 	left: 10px;
 	top: 10px;
 	font-size: 0px;
+	width: 46px;
+	text-align: left;
 }
 div.buttons button {
 	padding: 3px;
@@ -42,7 +44,7 @@ div.buttons button img {
 	height: 32px;
 }
 div.buttons button:not(button:nth-child(1)) {
-	margin-left: 10px;
+	margin-top: 10px;
 }
 div.buttons button.disabled {
 	filter: saturate(0) brightness(0.5) opacity(0.75);
