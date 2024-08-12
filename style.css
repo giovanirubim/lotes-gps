@@ -3,7 +3,7 @@ body {
 	margin: 0px;
 	overflow: hidden;
 	color: #ccc;
-	font-family: monospace;
+	font-family: Arial, Helvetica, sans-serif;
 }
 canvas {
 	background-color: #333;
@@ -46,4 +46,60 @@ div.buttons button:not(button:nth-child(1)) {
 }
 div.buttons button.disabled {
 	filter: saturate(0) brightness(0.5) opacity(0.75);
+}
+
+div.select-label {
+	margin: 20px;
+	padding: 20px;
+	background-color: #333;
+	color: #ccc;
+}
+div.label-item {
+	padding: 10px;
+	background-color: #444;
+	margin-bottom: 5px;
+	font-size: 0px;
+}
+div.label-item > input,
+div.label-item > span {
+	vertical-align: middle;
+}
+div.label-item input[type="color"] {
+	padding: 0px;
+	width: 26px;
+	height: 26px;
+	border: none;
+	background-color: transparent;
+}
+div.label-item .name {
+	margin-left: 10px;
+	font-size: 18px;
+}
+.add-label {
+	text-align: center;
+}
+.add-label img {
+	width: 36px;
+	height: 36px;
+}
+#popups {
+	position: fixed;
+	top: 0px;
+	left: 0px;
+	right: 0px;
+	bottom: 0px;
+	background-color: rgba(0, 0, 0, 0.75);
+}
+.popup-buttons {
+	text-align: right;
+	font-size: 0px;
+}
+.popup-buttons button {
+	height: 26px;
+	border: none;
+	background-color: #555;
+	color: #ccc;
+	padding: 0px 10px;
+	border-radius: 3px;
+	margin-left: 5px;
 }

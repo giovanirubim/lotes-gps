@@ -11,13 +11,19 @@
 		</div>
 		<canvas width="800" height="600"></canvas>
 		<div class="buttons">
-			<button id="options"><img src="img/etc.png"></button>
+			<button id="edit"><img src="img/etc.png"></button>
 			<button id="location" class="disabled"><img src="img/gps.png"></button>
 			<button id="compass"><img src="img/compass.png"></button>
-			<button id="tool">
-				<img id="add" src="img/add.png">
-				<img id="remove" hidden src="img/trash.png">
-			</button>
+			<button id="map"><img src="img/map.png"></button>
+		</div>
+		<div id="popups" hidden>
+			<div class="select-label">
+				<div id="label-list"></div>
+				<div class="popup-buttons">
+					<button class="cancel">Cancelar</button>
+					<button id="add-label">Novo</button>
+				</div>
+			</div>
 		</div>
 	</body>
 </html>

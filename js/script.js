@@ -8,10 +8,8 @@ const textarea = document.querySelector('textarea');
 const ctx = canvas.getContext('2d');
 const compassImg = document.querySelector('#compass img');
 const locationImg = document.querySelector('#location img');
+const mapImg = document.querySelector('#map img');
 const deg = Math.PI / 180;
-
-// Bottom-left: -25.49659, -54.55207
-// Top-right:   -25.49093, -54.54451
 
 const minLat = -25.49659 * deg;
 const maxLat = -25.49093 * deg;
@@ -21,7 +19,6 @@ const minDist = 15;
 
 let lat = NaN;
 let lon = NaN;
-let selectedLabel = 0;
 let preventTap = false;
 let mapType = 0;
 
@@ -34,8 +31,11 @@ let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
 const mapData = {
 	points: [],
 	labels: [{
-		name: 'test',
-		color: '#f00',
+		name: 'Boca de lobo',
+		color: '#0077ff',
+	}, {
+		name: 'Árvore alta',
+		color: '#007700',
 	}],
 };
 
@@ -145,11 +145,11 @@ const drawPoints = () => {
 		ctx.arc(x, y, 5, 0, Math.PI*2);
 		ctx.fill();
 
-		ctx.lineWidth = 3;
+		ctx.lineWidth = 2;
 		ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
 		ctx.stroke();
 		
-		ctx.lineWidth = 1.5;
+		ctx.lineWidth = 1;
 		ctx.strokeStyle = '#fff';
 		ctx.stroke();
 	}
@@ -280,15 +280,14 @@ const removePoint = (point) => {
 	}
 };
 
-const handleTap = (x, y) => {
-	if (toolId === 0) {
-		const coord = xyToCoord([ x, y ]);
-		const time = Math.round(Date.now() / 1000);
-		mapData.points.push({ coord, label: selectedLabel, time });
+const handleTap = async (x, y) => {
+	const labelId = await selectLabel();
+	if (labelId == null) {
+		return;
 	}
-	if (toolId === 1) {
-		removePoint([ x, y ]);
-	}
+	const coord = xyToCoord([ x, y ]);
+	const time = Math.round(Date.now() / 1000);
+	mapData.points.push({ coord, label: labelId, time });
 	render();
 };
 
@@ -307,7 +306,11 @@ canvas.addEventListener('mousedown', e => {
 
 canvas.addEventListener('mousemove', e => {
 	if (e.buttons & 1) {
-		handleTouch1Move(e.offsetX, e.offsetY);
+		if (touchStart) {
+			handleTouch1Move(e.offsetX, e.offsetY);
+		} else {
+			handleTouchEnd(e.offsetX, e.offsetY);
+		}
 	} else if (touchStart) {
 		handleTouchEnd(e.offsetX, e.offsetY);
 	}
@@ -412,20 +415,94 @@ const main = async () => {
 	);
 };
 
-const tool = document.querySelector('#tool');
-let toolId = 0;
-
-tool.addEventListener('click', () => {
-	const images = [ ...tool.children ];
-	toolId = (toolId + 1) % images.length;
-	images.forEach((img, i) => {
-		if (i === toolId) {
-			img.removeAttribute('hidden');
-		} else {
-			img.setAttribute('hidden', '');
-		}
-	});
+mapImg.parentElement.addEventListener('click', () => {
+	mapType = (mapType + 1) % 2;
+	render();
 });
+
+const addLabelButton = ({ name, color }, id) => {
+	const list = document.querySelector('#label-list');
+	const item = document.createElement('div');
+	item.setAttribute('class', 'label-item');
+	item.innerHTML = `<input type="color"><span class="name"><span>`;
+	item.querySelector('.name').innerText = name; 
+	const input = item.querySelector('input');
+	input.value = color;
+	list.appendChild(item);
+	item.addEventListener('click', () => {
+		handleLabelSelection?.(id);
+	});
+};
+
+const hidePopups = () => {
+	const dom = document.querySelector('#popups');
+	dom.setAttribute('hidden', '');
+};
+
+const showPopups = () => {
+	const dom = document.querySelector('#popups');
+	dom.removeAttribute('hidden');
+};
+
+const hidePopupsIfNoneIsVisible = () => {
+	const dom = document.querySelector('#popups');
+	const popups = [ ...dom.children ];
+	const visible = popups.find(popup => !popup.hasAttribute('hidden'));
+	if (!visible) {
+		hidePopups();
+	}
+};
+
+const hideLabelSelection = () => {
+	const dom = document.querySelector('.select-label');
+	dom.setAttribute('hidden', '');
+	hidePopupsIfNoneIsVisible();
+};
+
+const showLabelSelection = () => {
+	showPopups();
+	const dom = document.querySelector('.select-label');
+	dom.removeAttribute('hidden');
+};
+
+let handleLabelSelection = null;
+
+document.querySelector('#add-label').addEventListener('click', () => {
+	let name = prompt(`Nome da legenda`);
+	if (!name) {
+		return;
+	}
+	const color = `#xxx`.replace(/x/g, _ => {
+		return (Math.random()*256|0).toString(16).padStart(2, 0);
+	});
+	console.log(color);
+	const label = { name, color };
+	mapData.labels.push(label);
+	const labelId = mapData.labels.length - 1;
+	addLabelButton(label, labelId);
+	hideLabelSelection();
+	handleLabelSelection?.(labelId);
+});
+
+const selectLabel = () => new Promise((done) => {
+	showLabelSelection();
+	handleLabelSelection = (value) => {
+		handleLabelSelection = null;
+		hideLabelSelection();
+		done(value);
+	};
+});
+
+document.querySelector('.select-label .cancel').addEventListener('click', () => {
+	handleLabelSelection?.(null);
+	hideLabelSelection();
+});
+
+document.querySelector('#edit').addEventListener('click', () => {
+	showLabelSelection();
+});
+
+mapData.labels.forEach(addLabelButton);
 
 main().catch((err) => {
 	log('error:', err.message);
