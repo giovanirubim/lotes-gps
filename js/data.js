@@ -17,6 +17,7 @@ export const loadMapData = async () => {
 	return {
 		points: [],
 		labels: [],
+		numbers: [],
 	};
 };
 

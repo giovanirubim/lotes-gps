@@ -3,6 +3,7 @@ import { addClass, hasClass, removeClass, toggleClass } from './style.js';
 import './math.js';
 import * as M from './math.js';
 import { loadMapData, storeMapData } from './data.js';
+import { download } from './download.js';
 
 const getDOM = (querySelector) => {
 	return document.querySelector(querySelector);
@@ -13,6 +14,7 @@ const DOM = {
 	add_button: getDOM('#add'),
 	remove: getDOM('#remove'),
 	text: getDOM('#text'),
+	download: getDOM('#download'),
 };
 
 const textarea = document.querySelector('textarea');
@@ -191,6 +193,21 @@ const drawPoints = () => {
 	}
 };
 
+const drawNumbers = () => {
+	const { numbers } = mapData;
+	ctx.setTransform(1, 0, 0, 1, 0, 0);
+	ctx.font = '14px Arial';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.strokeStyle = '#222';
+	ctx.fillStyle = '#ccc';
+	for (const { coord, number } of numbers) {
+		const [ x, y ] = coordToXY(coord);
+		ctx.strokeText(number, x, y);
+		ctx.fillText(number, x, y);
+	}
+};
+
 const render = () => {
 	if (!satelliteImg) {
 		return;
@@ -208,6 +225,7 @@ const render = () => {
 	}
 	updateCompass();
 	drawPoints();
+	drawNumbers();
 };
 
 const log = (...args) => {
@@ -222,7 +240,7 @@ const log = (...args) => {
 const logErr = (err) => {
 	log(`Error: ${err.message}`);
 	log(err.stack);
-	console.log(err);
+	console.error(err);
 };
 
 const clearLog = () => {
@@ -308,22 +326,34 @@ const handleTouch2Move = (x1, y1, x2, y2) => {
 	render();
 };
 
-const removePoint = (point) => {
-	const { points } = mapData;
-	let index = null;
+const findByPoint = (arr, point) => {
+	let index = -1;
 	let dist = Infinity;
-	for (let i=0; i<points.length; ++i) {
-		const d = M.vecDist(point, coordToXY(points[i].coord));
+	for (let i=0; i<arr.length; ++i) {
+		const d = M.vecDist(point, coordToXY(arr[i].coord));
 		if (d < minDist && d < dist) {
 			dist = d;
 			index = i;
 		}
 	}
-	if (index !== null) {
-		points.splice(index, 1);
+	return index >= 0 ? arr[index] : null;
+};
+
+const arrayRemove = (arr, target) => {
+	const index = arr.indexOf(target);
+	if (index !== -1) {
+		arr.splice(index, 1);
 		return true;
 	}
 	return false;
+};
+
+const removePoint = (point) => {
+	const target = findByPoint([ ...mapData.points, ...mapData.numbers ], point);
+	if (arrayRemove(mapData.points, target) || arrayRemove(mapData.numbers, target)) {
+		storeMapData(mapData);
+		render();
+	}
 };
 
 const handleTap = async (x, y) => {
@@ -427,6 +457,17 @@ DOM.canvas.addEventListener('wheel', e => {
 		M.scaleTransform(m, [ s, s ], m);
 	}
 	M.combineTransformsAt(transform, m, c, transform);
+	render();
+});
+
+DOM.canvas.addEventListener('dblclick', (e) => {
+	const number = prompt('Número');
+	if (!number) {
+		return;
+	}
+	const coord = xyToCoord([ e.offsetX, e.offsetY ]);
+	mapData.numbers.push({ coord, number });
+	storeMapData(mapData);
 	render();
 });
 
@@ -535,7 +576,6 @@ document.querySelector('#add-label').addEventListener('click', () => {
 	const color = `#xxx`.replace(/x/g, _ => {
 		return (Math.random()*256|0).toString(16).padStart(2, 0);
 	});
-	console.log(color);
 	const label = { name, color };
 	mapData.labels.push(label);
 	const labelId = mapData.labels.length - 1;
@@ -606,6 +646,10 @@ DOM.remove.addEventListener('click', () => {
 		enableOnly(null);
 	}
 	render();
+});
+
+DOM.download.addEventListener('click', () => {
+	download('map-data.json', JSON.stringify(mapData, null, '\t'));
 });
 
 mapData.labels.forEach(addLabelButton);
