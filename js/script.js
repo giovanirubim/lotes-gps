@@ -15,6 +15,7 @@ const DOM = {
 	remove: getDOM('#remove'),
 	text: getDOM('#text'),
 	download: getDOM('#download'),
+	number: getDOM('#number'),
 };
 
 const textarea = document.querySelector('textarea');
@@ -35,13 +36,14 @@ let lon = NaN;
 let preventTap = false;
 let mapType = 0;
 
-let selectedLabel = null;
+let adding = false;
 let satelliteImg;
 let whiteMap;
 let blackMap;
 let transform = [ 1, 0, 0, 1, 0, 0 ];
 let withText = false;
 let removing = false;
+let showNumbers = false;
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
 
 const mapData = await loadMapData();
@@ -143,7 +145,7 @@ const clearCanvas = () => {
 const colorToBG = (color) => {
 	const hex = [ ...color.replace('#', '').match(/../g) ];
 	const sum = hex.map(x => parseInt(x, 16)).reduce((a, b) => a + b);
-	return (sum / 3 / 255) > 0.35 ? 'rgba(0, 0, 0, 0.75)' : 'rgba(255, 255, 255, 0.5)';
+	return (sum / 3 / 255) > 0.35 ? '#000' : '#fff';
 };
 
 const drawPoints = () => {
@@ -172,14 +174,11 @@ const drawPoints = () => {
 		ctx.fill();
 
 		if (withText) {
-			const metric = ctx.measureText(label.name);
 			const ty = y - 10;
-			const gap = 3;
-	
-			ctx.fillStyle = colorToBG(label.color);
-			ctx.fillRect(x - metric.width / 2 - gap, ty - 16, metric.width + 2*gap, 16);
-	
 			ctx.fillStyle = label.color;
+			ctx.strokeStyle = colorToBG(label.color);
+			ctx.lineWidth = 3;
+			ctx.strokeText(label.name, x, ty);
 			ctx.fillText(label.name, x, ty);
 		}
 
@@ -225,7 +224,9 @@ const render = () => {
 	}
 	updateCompass();
 	drawPoints();
-	drawNumbers();
+	if (showNumbers) {
+		drawNumbers();
+	}
 };
 
 const log = (...args) => {
@@ -357,11 +358,11 @@ const removePoint = (point) => {
 };
 
 const handleTap = async (x, y) => {
-	if (selectedLabel != null) {
+	if (adding) {
+		const labelId = await selectLabel();
 		const coord = xyToCoord([ x, y ]);
 		const time = Math.round(Date.now() / 1000);
-		mapData.points.push({ coord, label: selectedLabel, time });
-		selectedLabel = null;
+		mapData.points.push({ coord, label: labelId, time });
 		disable(DOM.add_button);
 		render();
 		storeMapData(mapData);
@@ -523,7 +524,7 @@ const addLabelButton = ({ name, color }, id) => {
 	input.value = color;
 	list.appendChild(item);
 	item.addEventListener('click', (e) => {
-		if (e.target !== item) {
+		if (e.target === input) {
 			return;
 		}
 		handleLabelSelection?.(id);
@@ -620,17 +621,7 @@ const disable = (tool) => {
 };
 
 DOM.add_button.addEventListener('click', async () => {
-	if (selectedLabel != null) {
-		enableOnly(null);
-		selectedLabel = null;
-	} else {
-		selectedLabel = await selectLabel();
-		if (selectedLabel == null) {
-			disable(DOM.add_button);
-		} else {
-			enableOnly(DOM.add_button);
-		}
-	}
+	adding = !toggleClass(DOM.add_button, 'disabled');
 });
 
 DOM.text.addEventListener('click', () => {
@@ -645,6 +636,11 @@ DOM.remove.addEventListener('click', () => {
 	} else {
 		enableOnly(null);
 	}
+	render();
+});
+
+DOM.number.addEventListener('click', () => {
+	showNumbers = !toggleClass(DOM.number, 'disabled');
 	render();
 });
 

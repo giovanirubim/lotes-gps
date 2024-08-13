@@ -1,9 +1,11 @@
 {
 	"points": [],
-	"labels": [{
-		"name": "Bueiro boca de lobo",
-		"color": "#f0f"
-	}],
+	"labels": [
+		{
+			"name": "Bueiro boca de lobo",
+			"color": "#ff00ff"
+		}
+	],
 	"numbers": [
 		{
 			"coord": [
