@@ -360,10 +360,14 @@ const removePoint = (point) => {
 const handleTap = async (x, y) => {
 	if (adding) {
 		const labelId = await selectLabel();
+		if (labelId == null) {
+			return;
+		}
 		const coord = xyToCoord([ x, y ]);
 		const time = Math.round(Date.now() / 1000);
 		mapData.points.push({ coord, label: labelId, time });
 		disable(DOM.add_button);
+		adding = false;
 		render();
 		storeMapData(mapData);
 		return;
