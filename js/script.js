@@ -467,7 +467,7 @@ const addLabelButton = (label) => {
 	const input = item.querySelector('input');
 	input.value = color;
 	bind(input, 'change', () => {
-		mapData.labels[id].color = input.value;
+		label.color = input.value;
 		storeMapData(mapData);
 		render();
 	});
