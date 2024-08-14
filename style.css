@@ -61,6 +61,7 @@ div.label-item {
 	background-color: #2c2c2c;
 	margin-bottom: 5px;
 	font-size: 0px;
+	cursor: pointer;
 }
 div.label-item > input,
 div.label-item > span {
@@ -86,6 +87,7 @@ div.label-item .name {
 }
 #popups {
 	position: fixed;
+	overflow: auto;
 	top: 0px;
 	left: 0px;
 	right: 0px;

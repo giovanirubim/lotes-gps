@@ -44,9 +44,9 @@ let satelliteImg;
 let whiteMap;
 let blackMap;
 let transform = [ 1, 0, 0, 1, 0, 0 ];
-let withText = false;
 let removing = false;
-let showNumbers = false;
+let showText = true;
+let showNumbers = true;
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
 let touchStart = null;
 let handleLabelSelection = null;
@@ -160,8 +160,8 @@ const drawPoints = () => {
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 	ctx.font = '14px Arial';
-	ctx.textAlign = 'right';
-	ctx.textBaseline = 'middle';
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'bottom';
 	ctx.lineJoin = 'round';
 	ctx.lineCap = 'round';
 
@@ -185,13 +185,13 @@ const drawPoints = () => {
 		ctx.arc(x, y, 5, 0, Math.PI*2);
 		ctx.fill();
 
-		if (withText) {
-			const tx = x - 10;
+		if (showText) {
 			ctx.fillStyle = label.color;
 			ctx.strokeStyle = colorToBG(label.color);
 			ctx.lineWidth = 3;
-			ctx.strokeText(label.name, tx, y);
-			ctx.fillText(label.name, tx, y);
+			const ty = y - 5;
+			ctx.strokeText(label.name, x, ty);
+			ctx.fillText(label.name, x, ty);
 		}
 
 		ctx.lineWidth = 2;
@@ -212,6 +212,7 @@ const drawNumbers = () => {
 	ctx.textBaseline = 'middle';
 	ctx.strokeStyle = '#222';
 	ctx.fillStyle = '#ccc';
+	ctx.lineWidth = 3
 	for (const { coord, number } of numbers) {
 		const [ x, y ] = coordToXY(coord);
 		ctx.strokeText(number, x, y);
@@ -636,7 +637,7 @@ bind(DOM.add_button, 'click', async () => {
 });
 
 bind(DOM.text, 'click', () => {
-	withText = !toggleClass(DOM.text, 'disabled');
+	showText = !toggleClass(DOM.text, 'disabled');
 	render();
 });
 
@@ -659,6 +660,16 @@ bind(DOM.download, 'click', () => {
 	download('map-data.json', JSON.stringify(mapData, null, '\t'));
 });
 
+bind(DOM.log_textarea, 'dblclick', () => {
+	DOM.log_textarea.style.display = 'none';
+});
+
+bind(window, 'keydown', e => {
+	if (e.code === 'KeyA') {
+		DOM.text.click();
+	}
+});
+
 const main = async () => {
 
 	mapData.labels.forEach(addLabelButton);
@@ -666,6 +677,7 @@ const main = async () => {
 	satelliteImg = await loadImage('./img/satellite.png');
 	whiteMap     = await loadImage('./img/white-map.png');
 	blackMap     = await loadImage('./img/black-map.png');
+
 	resetTransform();
 	resizeCanvas();
 

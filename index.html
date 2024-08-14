@@ -6,9 +6,6 @@
 		<script type="module" src="js/script.js"></script>
 	</head>
 	<body>
-		<div style="display:none;">
-			<textarea disabled></textarea>
-		</div>
 		<canvas width="800" height="600"></canvas>
 		<div class="buttons">
 			<button id="edit"><img src="img/etc.png"></button>
@@ -17,8 +14,8 @@
 			<button id="map"><img src="img/map.png"></button>
 			<button id="add" class="disabled"><img src="img/add.png"></button>
 			<button id="remove" class="disabled"><img src="img/trash.png"></button>
-			<button id="text" class="disabled"><img src="img/text.png"></button>
-			<button id="number" class="disabled"><img src="img/number.png"></button>
+			<button id="text"><img src="img/text.png"></button>
+			<button id="number"><img src="img/number.png"></button>
 			<button id="download"><img src="img/download.png"></button>
 		</div>
 		<div id="popups" hidden>
@@ -29,6 +26,9 @@
 					<button id="add-label">Novo</button>
 				</div>
 			</div>
+		</div>
+		<div style="display:none;">
+			<textarea></textarea>
 		</div>
 	</body>
 </html>
