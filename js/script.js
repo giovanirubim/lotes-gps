@@ -2,7 +2,7 @@ import { animate, smooth } from './animate.js';
 import { addClass, hasClass, removeClass, toggleClass } from './style.js';
 import './math.js';
 import * as M from './math.js';
-import { loadMapData, storeMapData } from './data.js';
+import { loadMapData, storeMapData, wipeStorage } from './data.js';
 import { download } from './download.js';
 
 const getDOM = (querySelector) => {
@@ -323,6 +323,9 @@ const handleTouchEnd = () => {
 };
 
 const handleTouch2Start = (x1, y1, x2, y2) => {
+	if (!touchStart) {
+		return;
+	}
 	touchStart.t = [ ...transform ];
 	touchStart.mouse = [ x1, y1 ];
 	const mouse = [ x2, y2 ];
@@ -669,6 +672,13 @@ bind(DOM.canvas, 'wheel', e => {
 bind(DOM.canvas, 'dblclick', (e) => {
 	const number = prompt('Número');
 	if (!number) {
+		return;
+	}
+	if (number === 'wipe') {
+		const msg = 'Tem certeza que deseja apagar os dados salvos localmente?';
+		if (confirm(msg)) {
+			wipeStorage();
+		}
 		return;
 	}
 	const coord = xyToCoord([ e.offsetX, e.offsetY ]);

@@ -32,3 +32,7 @@ export const loadMapData = async () => {
 export const storeMapData = (mapData) => {
 	localStorage.setItem('map-data', JSON.stringify(mapData));
 };
+
+export const wipeStorage = () => {
+	localStorage.removeItem('map-data');
+};
