@@ -167,7 +167,7 @@ const clearCanvas = () => {
 const colorToBG = (color) => {
 	const hex = [ ...color.replace('#', '').match(/../g) ];
 	const sum = hex.map(x => parseInt(x, 16)).reduce((a, b) => a + b);
-	return (sum / 3 / 255) > 0.35 ? '#000' : '#fff';
+	return (sum / 3 / 255) > 0.25 ? '#000' : '#fff';
 };
 
 const drawPoints = () => {
@@ -195,7 +195,7 @@ const drawPoints = () => {
 		if (y < 0 || y > height) {
 			continue;
 		}
-		const label = labelMap[point.label] ?? { name: 'deleted', color: '#777' };
+		const label = labelMap[point.label] ?? { name: '#', color: '#777' };
 		
 		ctx.fillStyle = label.color;
 		ctx.beginPath();
@@ -212,11 +212,11 @@ const drawPoints = () => {
 		}
 
 		ctx.lineWidth = 2;
-		ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
+		ctx.strokeStyle = '#fff';
 		ctx.stroke();
 		
 		ctx.lineWidth = 1;
-		ctx.strokeStyle = '#fff';
+		ctx.strokeStyle = '#222';
 		ctx.stroke();
 	}
 };
@@ -687,6 +687,13 @@ bind(DOM.canvas, 'wheel', e => {
 });
 
 bind(DOM.canvas, 'dblclick', (e) => {
+	e.preventDefault();
+	if (e.ctrlKey) {
+		enableOnly(DOM.add_label);
+		adding = true;
+		handleTap(e.offsetX, e.offsetY);
+		return;
+	}
 	const number = safePrompt('Número');
 	if (!number) {
 		return;

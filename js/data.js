@@ -1,21 +1,13 @@
-const removeAccents = (text = '') => {
-	return text.normalize('NFD').replace(/[^\x20-\x7e]/g, '');
-};
-
-const compareText = (a, b) => {
-	a = removeAccents(a).toLowerCase();
-	b = removeAccents(b).toLowerCase();
-	return a > b ? 1 : a < b ? - 1 : 0;
-};
+import { compareText } from './sort.js';
 
 const fixVersion = (data) => {
 	if (data.version == null) {
 		data.labels.forEach((label, i) => {
 			label.id = i;
 		});
-		data.labels.sort((a, b) => compareText(a.name, b.name));
 		data.version = 1;
 	}
+	data.labels.sort((a, b) => compareText(a.name, b.name));
 	return data;
 };
 
