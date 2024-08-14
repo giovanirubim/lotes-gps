@@ -54,6 +54,22 @@ let handleLabelSelection = null;
 
 let mapData;
 
+const buildSafeVersion = (fn) => {
+	return (...args) => {
+		const t = [ ...transform ];
+		const res = fn(...args);
+		setTimeout(() => {
+			transform.length = 0;
+			transform.push(...t);
+			render();
+		}, 0);
+		return res;
+	};
+};
+
+const safeConfirm = buildSafeVersion(confirm);
+const safePrompt = buildSafeVersion(prompt);
+
 const coordToXY = ([ lat, lon ]) => {
 	const ny = (lat - minLat) / (maxLat - minLat);
 	const nx = (lon - minLon) / (maxLon - minLon);
@@ -61,8 +77,8 @@ const coordToXY = ([ lat, lon ]) => {
 	return M.applyTransform(vec, transform);
 };
 
-const xyToCoord = (vec) => {
-	const [ x, y ] = M.undoTransform(vec, transform);
+const xyToCoord = (vec, t = transform) => {
+	const [ x, y ] = M.undoTransform(vec, t);
 	const lon = (x / satelliteImg.width) * (maxLon - minLon) + minLon;
 	const lat = (1 - y / satelliteImg.height) * (maxLat - minLat) + minLat;
 	return [ lat, lon ];
@@ -387,6 +403,7 @@ const removePoint = (point) => {
 };
 
 const handleTap = async (x, y) => {
+	const t = [ ...transform ];
 	if (adding) {
 		const labelId = await selectLabel();
 		if (labelId == null) {
@@ -394,7 +411,7 @@ const handleTap = async (x, y) => {
 		}
 		adding = false;
 		disable(DOM.add_label);
-		const coord = xyToCoord([ x, y ]);
+		const coord = xyToCoord([ x, y ], t);
 		const time = Math.round(Date.now() / 1000);
 		mapData.points.push({ coord, label: labelId, time });
 		render();
@@ -457,7 +474,7 @@ const addLabelButton = (label) => {
 
 	const editButton = item.querySelector('.edit');
 	bind(editButton, 'click', () => {
-		const newName = (prompt(`Novo nome para "${label.name}"`) ?? '').trim();
+		const newName = (safePrompt(`Novo nome para "${label.name}"`) ?? '').trim();
 		if (!newName) {
 			return;
 		}
@@ -470,7 +487,7 @@ const addLabelButton = (label) => {
 	const removeButton = item.querySelector('.remove');
 	bind(removeButton, 'click', () => {
 		const msg = `Tem certeza que deseja remover ${label.name} e todos seus pontos?`;
-		if (!confirm(msg)) {
+		if (!safeConfirm(msg)) {
 			return;
 		}
 		deleteLabel(label);
@@ -670,13 +687,13 @@ bind(DOM.canvas, 'wheel', e => {
 });
 
 bind(DOM.canvas, 'dblclick', (e) => {
-	const number = prompt('Número');
+	const number = safePrompt('Número');
 	if (!number) {
 		return;
 	}
 	if (number === 'wipe') {
 		const msg = 'Tem certeza que deseja apagar os dados salvos localmente?';
-		if (confirm(msg)) {
+		if (safeConfirm(msg)) {
 			wipeStorage();
 		}
 		return;
@@ -705,7 +722,7 @@ bind(mapImg.parentElement, 'click', () => {
 });
 
 bind(getDOM('#add-label'), 'click', () => {
-	let name = prompt(`Nome da legenda`);
+	let name = safePrompt(`Nome da legenda`);
 	if (!name) {
 		return;
 	}
