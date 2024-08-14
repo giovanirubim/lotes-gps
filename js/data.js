@@ -20,27 +20,13 @@ const fixVersion = (data) => {
 };
 
 export const loadMapData = async () => {
-	try {
-		const json = localStorage.getItem('map-data');
-		if (json) {
-			return JSON.parse(json);
-		}
-	} catch (err) {
-		console.error(err);
+	let json = localStorage.getItem('map-data');
+	if (json) {
+		return JSON.parse(json);
 	}
-	try {
-		const req = await fetch('./map-data.json');
-		const json = await req.text();
-		return fixVersion(JSON.parse(json));
-	} catch (err) {
-		console.error(err);
-	}
-	return {
-		version: 1,
-		points: [],
-		labels: [],
-		numbers: [],
-	};
+	const req = await fetch('./map-data.json');
+	json = await req.text();
+	return fixVersion(JSON.parse(json));
 };
 
 export const storeMapData = (mapData) => {

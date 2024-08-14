@@ -11,8 +11,8 @@ const getDOM = (querySelector) => {
 
 const DOM = {
 	canvas: getDOM('canvas'),
-	add_button: getDOM('#add'),
-	remove: getDOM('#remove'),
+	add_label: getDOM('#add'),
+	remove_element: getDOM('#remove'),
 	text: getDOM('#text'),
 	download: getDOM('#download'),
 	number: getDOM('#number'),
@@ -21,7 +21,7 @@ const DOM = {
 	log_textarea: getDOM('textarea'),
 };
 
-const tools = [ DOM.add_button, DOM.remove ];
+const tools = [ DOM.add_label, DOM.remove_element ];
 const ctx = DOM.canvas.getContext('2d');
 const compassImg = getDOM('#compass img');
 const locationImg = getDOM('#location img');
@@ -47,11 +47,12 @@ let transform = [ 1, 0, 0, 1, 0, 0 ];
 let removing = false;
 let showText = true;
 let showNumbers = true;
+let gpsStarted = false;
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
 let touchStart = null;
 let handleLabelSelection = null;
 
-const mapData = await loadMapData();
+let mapData;
 
 const coordToXY = ([ lat, lon ]) => {
 	const ny = (lat - minLat) / (maxLat - minLat);
@@ -178,7 +179,7 @@ const drawPoints = () => {
 		if (y < 0 || y > height) {
 			continue;
 		}
-		const label = labelMap[point.label];
+		const label = labelMap[point.label] ?? { name: 'deleted', color: '#777' };
 		
 		ctx.fillStyle = label.color;
 		ctx.beginPath();
@@ -296,6 +297,7 @@ const disableGPS = () => {
 };
 
 const enableGPS = () => {
+	startGPS();
 	removeClass(locationImg.parentElement, 'disabled');
 	gpsOn = true;
 	if (!isNaN(lat)) {
@@ -387,11 +389,11 @@ const handleTap = async (x, y) => {
 		if (labelId == null) {
 			return;
 		}
+		adding = false;
+		disable(DOM.add_label);
 		const coord = xyToCoord([ x, y ]);
 		const time = Math.round(Date.now() / 1000);
 		mapData.points.push({ coord, label: labelId, time });
-		disable(DOM.add_button);
-		adding = false;
 		render();
 		storeMapData(mapData);
 		return;
@@ -567,6 +569,18 @@ const newLabelId = () => {
 	return id;
 };
 
+const startGPS = () => {
+	if (gpsStarted) {
+		return;
+	}
+	gpsStarted = true;
+	navigator.geolocation.watchPosition(
+		handleLocation,
+		handleLocationError,
+		{ enableHighAccuracy: true },
+	);
+};
+
 bind(DOM.canvas, 'click', e => {
 	if (preventTap) {
 		return;
@@ -707,8 +721,13 @@ bind(DOM.edit_button, 'click', () => {
 	showLabelSelection(true);
 });
 
-bind(DOM.add_button, 'click', async () => {
-	adding = !toggleClass(DOM.add_button, 'disabled');
+bind(DOM.add_label, 'click', async () => {
+	adding = !adding;
+	if (adding) {
+		enableOnly(DOM.add_label);
+	} else {
+		disable(DOM.add_label);
+	}
 });
 
 bind(DOM.text, 'click', () => {
@@ -716,10 +735,10 @@ bind(DOM.text, 'click', () => {
 	render();
 });
 
-bind(DOM.remove, 'click', () => {
+bind(DOM.remove_element, 'click', () => {
 	removing = !removing;
 	if (removing) {
-		enableOnly(DOM.remove);
+		enableOnly(DOM.remove_element);
 	} else {
 		enableOnly(null);
 	}
@@ -747,6 +766,7 @@ bind(window, 'keydown', e => {
 
 const main = async () => {
 
+	mapData = await loadMapData();
 	mapData.labels.forEach(addLabelButton);
 	
 	satelliteImg = await loadImage('./img/satellite.png');
@@ -755,12 +775,6 @@ const main = async () => {
 
 	resetTransform();
 	resizeCanvas();
-
-	navigator.geolocation.watchPosition(
-		handleLocation,
-		handleLocationError,
-		{ enableHighAccuracy: true },
-	);
 };
 
 main().catch(logErr);
