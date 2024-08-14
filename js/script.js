@@ -18,13 +18,14 @@ const DOM = {
 	number: getDOM('#number'),
 	edit_button: getDOM('#edit'),
 	cancel_label_selection: getDOM('.select-label .cancel'),
+	log_textarea: getDOM('textarea'),
 };
 
-const textarea = document.querySelector('textarea');
+const tools = [ DOM.add_button, DOM.remove ];
 const ctx = DOM.canvas.getContext('2d');
-const compassImg = document.querySelector('#compass img');
-const locationImg = document.querySelector('#location img');
-const mapImg = document.querySelector('#map img');
+const compassImg = getDOM('#compass img');
+const locationImg = getDOM('#location img');
+const mapImg = getDOM('#map img');
 const deg = Math.PI / 180;
 
 const minLat = -25.49389 * deg;
@@ -47,6 +48,8 @@ let withText = false;
 let removing = false;
 let showNumbers = false;
 let gpsOn = !hasClass(locationImg.parentElement, 'disabled');
+let touchStart = null;
+let handleLabelSelection = null;
 
 const mapData = await loadMapData();
 
@@ -232,6 +235,7 @@ const render = () => {
 };
 
 const log = (...args) => {
+	const textarea = DOM.log_textarea;
 	textarea.parentElement.style.display = 'block';
 	if (textarea.value !== '' && !textarea.value.endsWith('\n')) {
 		textarea.value += '\n';
@@ -247,7 +251,7 @@ const logErr = (err) => {
 };
 
 const clearLog = () => {
-	textarea.value = '';
+	DOM.log_textarea.value = '';
 };
 
 const resizeCanvas = () => {
@@ -271,9 +275,6 @@ const bind = (dom, event, handler) => {
 	});
 };
 
-bind(window, 'resize', resizeCanvas);
-
-let touchStart = null;
 const handleTouch1Start = (x, y) => {
 	preventTap = false;
 	const mouse = [ x, y ];
@@ -514,27 +515,13 @@ const handleLocationError = (err) => {
 	logErr(new Error(`${err.message || `GeolocationPositionError ${err.code}`}`))
 };
 
-const main = async () => {
-	satelliteImg = await loadImage('./img/satellite.png');
-	whiteMap     = await loadImage('./img/white-map.png');
-	blackMap     = await loadImage('./img/black-map.png');
-	resetTransform();
-	resizeCanvas();
-
-	navigator.geolocation.watchPosition(
-		handleLocation,
-		handleLocationError,
-		{ enableHighAccuracy: true },
-	);
-};
-
 bind(mapImg.parentElement, 'click', () => {
 	mapType = (mapType + 1) % 2;
 	render();
 });
 
-const addLabelButton = ({ name, color }, id) => {
-	const list = document.querySelector('#label-list');
+const addLabelButton = ({ name, color, id }) => {
+	const list = getDOM('#label-list');
 	const item = document.createElement('div');
 	item.setAttribute('class', 'label-item');
 	item.innerHTML = `<input type="color"><span class="name"><span>`;
@@ -556,17 +543,17 @@ const addLabelButton = ({ name, color }, id) => {
 };
 
 const hidePopups = () => {
-	const dom = document.querySelector('#popups');
+	const dom = getDOM('#popups');
 	dom.setAttribute('hidden', '');
 };
 
 const showPopups = () => {
-	const dom = document.querySelector('#popups');
+	const dom = getDOM('#popups');
 	dom.removeAttribute('hidden');
 };
 
 const hidePopupsIfNoneIsVisible = () => {
-	const dom = document.querySelector('#popups');
+	const dom = getDOM('#popups');
 	const popups = [ ...dom.children ];
 	const visible = popups.find(popup => !popup.hasAttribute('hidden'));
 	if (!visible) {
@@ -575,20 +562,20 @@ const hidePopupsIfNoneIsVisible = () => {
 };
 
 const hideLabelSelection = () => {
-	const dom = document.querySelector('.select-label');
+	const dom = getDOM('.select-label');
 	dom.setAttribute('hidden', '');
 	hidePopupsIfNoneIsVisible();
 };
 
 const showLabelSelection = () => {
 	showPopups();
-	const dom = document.querySelector('.select-label');
+	const dom = getDOM('.select-label');
 	dom.removeAttribute('hidden');
 };
 
-let handleLabelSelection = null;
+bind(window, 'resize', resizeCanvas);
 
-bind(document.querySelector('#add-label'), 'click', () => {
+bind(getDOM('#add-label'), 'click', () => {
 	let name = prompt(`Nome da legenda`);
 	if (!name) {
 		return;
@@ -618,8 +605,6 @@ bind(DOM.cancel_label_selection, 'click', () => {
 	handleLabelSelection?.(null);
 	hideLabelSelection();
 });
-
-const tools = [ DOM.add_button, DOM.remove ];
 
 const enableOnly = (target) => {
 	tools.forEach(dom => {
@@ -667,6 +652,21 @@ bind(DOM.download, 'click', () => {
 	download('map-data.json', JSON.stringify(mapData, null, '\t'));
 });
 
-mapData.labels.forEach(addLabelButton);
+const main = async () => {
+
+	mapData.labels.forEach(addLabelButton);
+	
+	satelliteImg = await loadImage('./img/satellite.png');
+	whiteMap     = await loadImage('./img/white-map.png');
+	blackMap     = await loadImage('./img/black-map.png');
+	resetTransform();
+	resizeCanvas();
+
+	navigator.geolocation.watchPosition(
+		handleLocation,
+		handleLocationError,
+		{ enableHighAccuracy: true },
+	);
+};
 
 main().catch(logErr);
