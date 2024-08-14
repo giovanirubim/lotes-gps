@@ -331,64 +331,83 @@
 	],
 	"labels": [
 		{
-			"name": "Bueiro boca de lobo",
-			"color": "#ff00ff"
-		},
-		{
-			"name": "Construção",
-			"color": "#841072"
-		},
-		{
 			"name": "1 Pavimento",
-			"color": "#821dee"
-		},
-		{
-			"name": "Árvore grande porte",
-			"color": "#a03491"
-		},
-		{
-			"name": "PMFI",
-			"color": "#55cd46"
-		},
-		{
-			"name": "Ponto de esgoto (Sanepar) G",
-			"color": "#d9753d"
-		},
-		{
-			"name": "Ponto de ônibus",
-			"color": "#c44b14"
-		},
-		{
-			"name": "Residencial",
-			"color": "#27b269"
+			"color": "#821dee",
+			"id": 2
 		},
 		{
 			"name": "Arbusto ",
-			"color": "#ccb734"
+			"color": "#ccb734",
+			"id": 8
 		},
 		{
-			"name": "Misto (S/R)",
-			"color": "#a39ddf"
-		},
-		{
-			"name": "Poste sem uso",
-			"color": "#bf506d"
+			"name": "Árvore grande porte",
+			"color": "#26dd22",
+			"id": 3
 		},
 		{
 			"name": "Árvore médio porte",
-			"color": "#272bc4"
+			"color": "#272bc4",
+			"id": 11
 		},
 		{
 			"name": "Árvore porte pequeno",
-			"color": "#b8737d"
+			"color": "#b8737d",
+			"id": 12
+		},
+		{
+			"name": "Bueiro boca de lobo",
+			"color": "#ff00ff",
+			"id": 0
+		},
+		{
+			"name": "Construção",
+			"color": "#841072",
+			"id": 1
+		},
+		{
+			"name": "Misto (S/R)",
+			"color": "#a39ddf",
+			"id": 9
+		},
+		{
+			"name": "PMFI",
+			"color": "#55cd46",
+			"id": 4
+		},
+		{
+			"name": "Ponto de esgoto (Sanepar) G",
+			"color": "#d9753d",
+			"id": 5
+		},
+		{
+			"name": "Ponto de ônibus",
+			"color": "#c44b14",
+			"id": 6
 		},
 		{
 			"name": "Poste 1/2/Com",
-			"color": "#0edcc0"
+			"color": "#0edcc0",
+			"id": 13
 		},
 		{
 			"name": "Poste luz 2",
-			"color": "#66fc3c"
+			"color": "#66fc3c",
+			"id": 14
+		},
+		{
+			"name": "Poste sem uso",
+			"color": "#bf506d",
+			"id": 10
+		},
+		{
+			"name": "Residencial",
+			"color": "#27b269",
+			"id": 7
+		},
+		{
+			"name": "asdsa",
+			"color": "#915a9c"
 		}
 	],
 	"numbers": [
@@ -1190,5 +1209,6 @@
 			],
 			"number": "1344"
 		}
-	]
+	],
+	"version": 1
 }

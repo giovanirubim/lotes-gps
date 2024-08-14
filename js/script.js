@@ -160,8 +160,15 @@ const drawPoints = () => {
 	ctx.setTransform(1, 0, 0, 1, 0, 0);
 
 	ctx.font = '14px Arial';
-	ctx.textAlign = 'center';
-	ctx.textBaseline = 'bottom';
+	ctx.textAlign = 'right';
+	ctx.textBaseline = 'middle';
+	ctx.lineJoin = 'round';
+	ctx.lineCap = 'round';
+
+	const labelMap = {};
+	for (const label of labels) {
+		labelMap[label.id] = label;
+	}
 
 	for (const point of points) {
 		const [ x, y ] = coordToXY(point.coord);
@@ -171,7 +178,7 @@ const drawPoints = () => {
 		if (y < 0 || y > height) {
 			continue;
 		}
-		const label = labels[point.label];
+		const label = labelMap[point.label];
 		
 		ctx.fillStyle = label.color;
 		ctx.beginPath();
@@ -179,12 +186,12 @@ const drawPoints = () => {
 		ctx.fill();
 
 		if (withText) {
-			const ty = y - 10;
+			const tx = x - 10;
 			ctx.fillStyle = label.color;
 			ctx.strokeStyle = colorToBG(label.color);
 			ctx.lineWidth = 3;
-			ctx.strokeText(label.name, x, ty);
-			ctx.fillText(label.name, x, ty);
+			ctx.strokeText(label.name, tx, y);
+			ctx.fillText(label.name, tx, y);
 		}
 
 		ctx.lineWidth = 2;
