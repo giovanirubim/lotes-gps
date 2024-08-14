@@ -404,6 +404,169 @@ const handleTap = async (x, y) => {
 	}
 };
 
+const handleLocation = (data) => {
+	const { latitude, longitude } = data.coords;
+	lat = latitude * deg;
+	lon = longitude * deg;
+	if (gpsOn) {
+		moveToCoord();
+	}
+};
+
+const handleLocationError = (err) => {
+	logErr(new Error(`${err.message || `GeolocationPositionError ${err.code}`}`))
+};
+
+const addLabelButton = (label) => {
+	const { name, color, id } = label;
+	const list = getDOM('#label-list');
+
+	const item = document.createElement('div');
+	item.setAttribute('class', 'label-item');
+	item.innerHTML = `
+		<div class="label-item-buttons">
+			<button class="edit"><img src="img/edit.png"></button>
+			<button class="remove"><img src="img/delete.png"></button>
+		</div>
+		<input type="color">
+		<span class="name"></span>
+	`.trim().replace(/\s*\n\s*/, '');
+	list.appendChild(item);
+	
+	const nameDOM = item.querySelector('.name');
+	nameDOM.innerText = name; 
+	bind(item, 'click', (e) => {
+		if (e.target !== item && e.target !== nameDOM) {
+			return;
+		}
+		handleLabelSelection?.(id);
+	});
+
+	const input = item.querySelector('input');
+	input.value = color;
+	bind(input, 'change', () => {
+		mapData.labels[id].color = input.value;
+		storeMapData(mapData);
+		render();
+	});
+
+	const editButton = item.querySelector('.edit');
+	bind(editButton, 'click', () => {
+		const newName = (prompt(`Novo nome para "${label.name}"`) ?? '').trim();
+		if (!newName) {
+			return;
+		}
+		label.name = newName;
+		nameDOM.innerText = newName;
+		storeMapData(mapData);
+		render();
+	});
+
+	const removeButton = item.querySelector('.remove');
+	bind(removeButton, 'click', () => {
+		const msg = `Tem certeza que deseja remover ${label.name} e todos seus pontos?`;
+		if (!confirm(msg)) {
+			return;
+		}
+		deleteLabel(label);
+		item.parentElement.removeChild(item);
+		storeMapData(mapData);
+		render();
+	});
+};
+
+const removeMany = (array, fn) => {
+	const keep = array.filter(item => !fn(item));
+	array.length = 0;
+	array.push(...keep);
+	return array;
+};
+
+const deleteLabel = (label) => {
+	removeMany(mapData.points, (point) => {
+		return point.label == label.id;
+	});
+	const i = mapData.labels.indexOf(label);
+	if (i !== -1) {
+		mapData.labels.splice(i, 1);
+	}
+};
+
+const hidePopups = () => {
+	const dom = getDOM('#popups');
+	dom.setAttribute('hidden', '');
+};
+
+const showPopups = () => {
+	const dom = getDOM('#popups');
+	dom.removeAttribute('hidden');
+};
+
+const hidePopupsIfNoneIsVisible = () => {
+	const dom = getDOM('#popups');
+	const popups = [ ...dom.children ];
+	const visible = popups.find(popup => !popup.hasAttribute('hidden'));
+	if (!visible) {
+		hidePopups();
+	}
+};
+
+const hideLabelSelection = () => {
+	const dom = getDOM('.select-label');
+	dom.setAttribute('hidden', '');
+	hidePopupsIfNoneIsVisible();
+};
+
+const showLabelSelection = (edit) => {
+	showPopups();
+	if (edit) {
+		setEditingLabelButtons(true);
+	} else {
+		setEditingLabelButtons(false);
+	}
+	const dom = getDOM('.select-label');
+	dom.removeAttribute('hidden');
+};
+
+const selectLabel = (edit) => new Promise((done) => {
+	showLabelSelection(edit);
+	handleLabelSelection = (value) => {
+		handleLabelSelection = null;
+		hideLabelSelection();
+		done(value);
+	};
+});
+
+const enableOnly = (target) => {
+	tools.forEach(dom => {
+		if (dom === target) {
+			removeClass(dom, 'disabled');
+		} else {
+			addClass(dom, 'disabled');
+		}
+	});
+};
+
+const disable = (tool) => {
+	addClass(tool, 'disabled');
+};
+
+const setEditingLabelButtons = (enable) => {
+	if (enable) {
+		removeClass(getDOM('.select-label'), 'selecting');
+	} else {
+		addClass(getDOM('.select-label'), 'selecting');
+	}
+};
+
+const newLabelId = () => {
+	let id = 0;
+	for (const label of mapData.labels) {
+		id = Math.max(label.id + 1, id);
+	}
+	return id;
+};
+
 bind(DOM.canvas, 'click', e => {
 	if (preventTap) {
 		return;
@@ -510,78 +673,12 @@ bind(locationImg.parentElement, 'click', () => {
 	}
 });
 
-const handleLocation = (data) => {
-	const { latitude, longitude } = data.coords;
-	lat = latitude * deg;
-	lon = longitude * deg;
-	if (gpsOn) {
-		moveToCoord();
-	}
-};
-
-const handleLocationError = (err) => {
-	logErr(new Error(`${err.message || `GeolocationPositionError ${err.code}`}`))
-};
+bind(window, 'resize', resizeCanvas);
 
 bind(mapImg.parentElement, 'click', () => {
 	mapType = (mapType + 1) % 2;
 	render();
 });
-
-const addLabelButton = ({ name, color, id }) => {
-	const list = getDOM('#label-list');
-	const item = document.createElement('div');
-	item.setAttribute('class', 'label-item');
-	item.innerHTML = `<input type="color"><span class="name"><span>`;
-	item.querySelector('.name').innerText = name; 
-	const input = item.querySelector('input');
-	input.value = color;
-	list.appendChild(item);
-	bind(item, 'click', (e) => {
-		if (e.target === input) {
-			return;
-		}
-		handleLabelSelection?.(id);
-	});
-	bind(input, 'change', () => {
-		mapData.labels[id].color = input.value;
-		storeMapData(mapData);
-		render();
-	});
-};
-
-const hidePopups = () => {
-	const dom = getDOM('#popups');
-	dom.setAttribute('hidden', '');
-};
-
-const showPopups = () => {
-	const dom = getDOM('#popups');
-	dom.removeAttribute('hidden');
-};
-
-const hidePopupsIfNoneIsVisible = () => {
-	const dom = getDOM('#popups');
-	const popups = [ ...dom.children ];
-	const visible = popups.find(popup => !popup.hasAttribute('hidden'));
-	if (!visible) {
-		hidePopups();
-	}
-};
-
-const hideLabelSelection = () => {
-	const dom = getDOM('.select-label');
-	dom.setAttribute('hidden', '');
-	hidePopupsIfNoneIsVisible();
-};
-
-const showLabelSelection = () => {
-	showPopups();
-	const dom = getDOM('.select-label');
-	dom.removeAttribute('hidden');
-};
-
-bind(window, 'resize', resizeCanvas);
 
 bind(getDOM('#add-label'), 'click', () => {
 	let name = prompt(`Nome da legenda`);
@@ -591,7 +688,8 @@ bind(getDOM('#add-label'), 'click', () => {
 	const color = `#xxx`.replace(/x/g, _ => {
 		return (Math.random()*256|0).toString(16).padStart(2, 0);
 	});
-	const label = { name, color };
+	const id = newLabelId();
+	const label = { name, color, id };
 	mapData.labels.push(label);
 	const labelId = mapData.labels.length - 1;
 	addLabelButton(label, labelId);
@@ -600,36 +698,13 @@ bind(getDOM('#add-label'), 'click', () => {
 	storeMapData(mapData);
 });
 
-const selectLabel = () => new Promise((done) => {
-	showLabelSelection();
-	handleLabelSelection = (value) => {
-		handleLabelSelection = null;
-		hideLabelSelection();
-		done(value);
-	};
-});
-
 bind(DOM.cancel_label_selection, 'click', () => {
 	handleLabelSelection?.(null);
 	hideLabelSelection();
 });
 
-const enableOnly = (target) => {
-	tools.forEach(dom => {
-		if (dom === target) {
-			removeClass(dom, 'disabled');
-		} else {
-			addClass(dom, 'disabled');
-		}
-	});
-};
-
-const disable = (tool) => {
-	addClass(tool, 'disabled');
-};
-
 bind(DOM.edit_button, 'click', () => {
-	showLabelSelection();
+	showLabelSelection(true);
 });
 
 bind(DOM.add_button, 'click', async () => {
