@@ -16,6 +16,8 @@ const DOM = {
 	text: getDOM('#text'),
 	download: getDOM('#download'),
 	number: getDOM('#number'),
+	edit_button: getDOM('#edit'),
+	cancel_label_selection: getDOM('.select-label .cancel'),
 };
 
 const textarea = document.querySelector('textarea');
@@ -256,7 +258,20 @@ const resizeCanvas = () => {
 	render();
 };
 
-window.addEventListener('resize', resizeCanvas);
+const bind = (dom, event, handler) => {
+	dom.addEventListener(event, (e) => {
+		try {
+			const res = handler(e);
+			if (res instanceof Promise) {
+				res.catch(logErr);
+			}
+		} catch(err) {
+			logErr(err);
+		}
+	});
+};
+
+bind(window, 'resize', resizeCanvas);
 
 let touchStart = null;
 const handleTouch1Start = (x, y) => {
@@ -380,20 +395,20 @@ const handleTap = async (x, y) => {
 	}
 };
 
-DOM.canvas.addEventListener('click', e => {
+bind(DOM.canvas, 'click', e => {
 	if (preventTap) {
 		return;
 	}
 	handleTap(e.offsetX, e.offsetY);
 });
 
-DOM.canvas.addEventListener('mousedown', e => {
+bind(DOM.canvas, 'mousedown', e => {
 	if (e.button === 0) {
 		handleTouch1Start(e.offsetX, e.offsetY);
 	}
 });
 
-DOM.canvas.addEventListener('mousemove', e => {
+bind(DOM.canvas, 'mousemove', e => {
 	if (e.buttons & 1) {
 		if (touchStart) {
 			handleTouch1Move(e.offsetX, e.offsetY);
@@ -405,13 +420,13 @@ DOM.canvas.addEventListener('mousemove', e => {
 	}
 });
 
-DOM.canvas.addEventListener('mouseout', e => {
+bind(DOM.canvas, 'mouseout', e => {
 	if (e.button === 0) {
 		handleTouchEnd(e.offsetX, e.offsetY);
 	}
 });
 
-DOM.canvas.addEventListener('touchstart', e => {
+bind(DOM.canvas, 'touchstart', e => {
 	const { touches } = e;
 	if (touches.length === 1) {
 		const [ touch ] = touches;
@@ -423,7 +438,7 @@ DOM.canvas.addEventListener('touchstart', e => {
 	}
 });
 
-DOM.canvas.addEventListener('touchmove', e => {
+bind(DOM.canvas, 'touchmove', e => {
 	const { touches } = e;
 	if (!touchStart) {
 		return;
@@ -444,13 +459,13 @@ DOM.canvas.addEventListener('touchmove', e => {
 	e.preventDefault();
 });
 
-DOM.canvas.addEventListener('touchend', () => {
+bind(DOM.canvas, 'touchend', () => {
 	if (touchStart) {
 		handleTouchEnd();
 	}
 });
 
-DOM.canvas.addEventListener('wheel', e => {
+bind(DOM.canvas, 'wheel', e => {
 	e.preventDefault();
 	const m = M.clearTransform();
 	const c = [ e.offsetX, e.offsetY ];
@@ -465,7 +480,7 @@ DOM.canvas.addEventListener('wheel', e => {
 	render();
 });
 
-DOM.canvas.addEventListener('dblclick', (e) => {
+bind(DOM.canvas, 'dblclick', (e) => {
 	const number = prompt('Número');
 	if (!number) {
 		return;
@@ -476,9 +491,9 @@ DOM.canvas.addEventListener('dblclick', (e) => {
 	render();
 });
 
-compassImg.parentElement.addEventListener('click', alignWithCompass);
+bind(compassImg.parentElement, 'click', alignWithCompass);
 
-locationImg.parentElement.addEventListener('click', () => {
+bind(locationImg.parentElement, 'click', () => {
 	if (hasClass(locationImg.parentElement, 'disabled')) {
 		enableGPS();
 	} else {
@@ -513,7 +528,7 @@ const main = async () => {
 	);
 };
 
-mapImg.parentElement.addEventListener('click', () => {
+bind(mapImg.parentElement, 'click', () => {
 	mapType = (mapType + 1) % 2;
 	render();
 });
@@ -527,13 +542,13 @@ const addLabelButton = ({ name, color }, id) => {
 	const input = item.querySelector('input');
 	input.value = color;
 	list.appendChild(item);
-	item.addEventListener('click', (e) => {
+	bind(item, 'click', (e) => {
 		if (e.target === input) {
 			return;
 		}
 		handleLabelSelection?.(id);
 	});
-	input.addEventListener('change', () => {
+	bind(input, 'change', () => {
 		mapData.labels[id].color = input.value;
 		storeMapData(mapData);
 		render();
@@ -573,7 +588,7 @@ const showLabelSelection = () => {
 
 let handleLabelSelection = null;
 
-document.querySelector('#add-label').addEventListener('click', () => {
+bind(document.querySelector('#add-label'), 'click', () => {
 	let name = prompt(`Nome da legenda`);
 	if (!name) {
 		return;
@@ -599,13 +614,9 @@ const selectLabel = () => new Promise((done) => {
 	};
 });
 
-document.querySelector('.select-label .cancel').addEventListener('click', () => {
+bind(DOM.cancel_label_selection, 'click', () => {
 	handleLabelSelection?.(null);
 	hideLabelSelection();
-});
-
-document.querySelector('#edit').addEventListener('click', () => {
-	showLabelSelection();
 });
 
 const tools = [ DOM.add_button, DOM.remove ];
@@ -624,16 +635,20 @@ const disable = (tool) => {
 	addClass(tool, 'disabled');
 };
 
-DOM.add_button.addEventListener('click', async () => {
+bind(DOM.edit_button, 'click', () => {
+	showLabelSelection();
+});
+
+bind(DOM.add_button, 'click', async () => {
 	adding = !toggleClass(DOM.add_button, 'disabled');
 });
 
-DOM.text.addEventListener('click', () => {
+bind(DOM.text, 'click', () => {
 	withText = !toggleClass(DOM.text, 'disabled');
 	render();
 });
 
-DOM.remove.addEventListener('click', () => {
+bind(DOM.remove, 'click', () => {
 	removing = !removing;
 	if (removing) {
 		enableOnly(DOM.remove);
@@ -643,12 +658,12 @@ DOM.remove.addEventListener('click', () => {
 	render();
 });
 
-DOM.number.addEventListener('click', () => {
+bind(DOM.number, 'click', () => {
 	showNumbers = !toggleClass(DOM.number, 'disabled');
 	render();
 });
 
-DOM.download.addEventListener('click', () => {
+bind(DOM.download, 'click', () => {
 	download('map-data.json', JSON.stringify(mapData, null, '\t'));
 });
 
