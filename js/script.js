@@ -676,7 +676,7 @@ bind(DOM.canvas, 'wheel', e => {
 	const m = M.clearTransform();
 	const c = [ e.offsetX, e.offsetY ];
 	if (e.shiftKey) {
-		const angle = e.deltaY * 0.002;
+		const angle = Math.sign(e.deltaY) * 5 / 180 * Math.PI;
 		M.rotateTransform(m, angle, m);
 	} else {
 		const s = (1 - e.deltaY * 0.002);
