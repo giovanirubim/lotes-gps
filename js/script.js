@@ -403,7 +403,7 @@ const removePoint = (point) => {
 };
 
 const handleTap = async (x, y) => {
-	const t = [ ...transform ];
+	const t = [ ...touchStart.t ];
 	if (adding) {
 		const labelId = await selectLabel();
 		if (labelId == null) {
