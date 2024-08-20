@@ -798,6 +798,15 @@ bind(window, 'keydown', e => {
 	}
 });
 
+bind(getDOM('#sync'), 'click', () => {
+	const res = safeConfirm(`Tem certeza que deseja sobrescrever os dados locais com os salvos na nuvem?`);
+	if (!res) {
+		return;
+	}
+	localStorage.clear();
+	window.location.reload();
+});
+
 const main = async () => {
 
 	mapData = await loadMapData();
