@@ -38,6 +38,7 @@ let lat = NaN;
 let lon = NaN;
 let preventTap = false;
 let mapType = 0;
+let showingLabel = null;
 
 let adding = false;
 let satelliteImg;
@@ -53,6 +54,13 @@ let touchStart = null;
 let handleLabelSelection = null;
 
 let mapData;
+
+const labelIsVisible = (label) => {
+	if (showingLabel === null) {
+		return true;
+	}
+	return label.id === showingLabel;
+};
 
 const buildSafeVersion = (fn) => {
 	return (...args) => {
@@ -196,6 +204,10 @@ const drawPoints = () => {
 			continue;
 		}
 		const label = labelMap[point.label] ?? { name: '#', color: '#777' };
+
+		if (!labelIsVisible(label)) {
+			continue;
+		}
 		
 		ctx.fillStyle = label.color;
 		ctx.beginPath();
@@ -792,9 +804,17 @@ bind(DOM.log_textarea, 'dblclick', () => {
 	DOM.log_textarea.style.display = 'none';
 });
 
-bind(window, 'keydown', e => {
+bind(window, 'keydown', async (e) => {
 	if (e.code === 'KeyA') {
 		DOM.text.click();
+	}
+	if (e.code === 'KeyL') {
+		if (showingLabel !== null) {
+			showingLabel = null;
+		} else {
+			showingLabel = (await selectLabel()) || null;
+		}
+		render();
 	}
 });
 
