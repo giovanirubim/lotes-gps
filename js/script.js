@@ -9,6 +9,8 @@ const getDOM = (querySelector) => {
 	return document.querySelector(querySelector);
 };
 
+let filterLabel = null;
+
 const DOM = {
 	canvas: getDOM('canvas'),
 	add_label: getDOM('#add'),
@@ -55,7 +57,18 @@ let handleLabelSelection = null;
 
 let mapData;
 
+const simplifyString = (s) => {
+	return s.toLowerCase().normalize('NFD').replace(/[^\x20-\x7f]/g, '');
+};
+
+const simpleContains = (whole, part) => {
+	return simplifyString(whole).includes(simplifyString(part));
+};
+
 const labelIsVisible = (label) => {
+	if (filterLabel) {
+		return simpleContains(label.name, filterLabel);
+	}
 	if (showingLabel === null) {
 		return true;
 	}
@@ -807,6 +820,10 @@ bind(DOM.log_textarea, 'dblclick', () => {
 bind(window, 'keydown', async (e) => {
 	if (e.code === 'KeyA') {
 		DOM.text.click();
+	}
+	if (e.code === 'KeyF') {
+		filterLabel = prompt('Filter labels') || null;
+		render();
 	}
 	if (e.code === 'KeyL') {
 		if (showingLabel !== null) {
