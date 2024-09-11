@@ -12,10 +12,10 @@ const fixVersion = (data) => {
 };
 
 export const loadMapData = async () => {
-	let json = localStorage.getItem('map-data');
-	if (json) {
-		return JSON.parse(json);
-	}
+	// let json = localStorage.getItem('map-data');
+	// if (json) {
+	// 	return JSON.parse(json);
+	// }
 	const req = await fetch('./map-data.json');
 	json = await req.text();
 	return fixVersion(JSON.parse(json));
