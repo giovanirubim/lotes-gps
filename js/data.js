@@ -17,7 +17,7 @@ export const loadMapData = async () => {
 	// 	return JSON.parse(json);
 	// }
 	const req = await fetch('./map-data.json');
-	json = await req.text();
+	const json = await req.text();
 	return fixVersion(JSON.parse(json));
 };
 
